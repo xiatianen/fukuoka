@@ -267,6 +267,16 @@ html, body {
 }
 .marker-cluster, .marker-cluster div { background: none !important; }
 
+/* 住宿基地（飯店）marker */
+.home-marker { background: none; border: none; }
+.home-marker .hm-pin {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #fff; border: 2.5px solid var(--ink);
+  display: grid; place-items: center; font-size: 15px; line-height: 1;
+  box-shadow: 0 3px 8px rgba(21,35,63,.4); transition: transform .15s;
+}
+.home-marker:hover .hm-pin { transform: scale(1.12); }
+
 /* Leaflet popup 客製 */
 .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: var(--shadow); padding: 0; overflow: hidden; }
 .leaflet-popup-content { margin: 0 !important; font-family: var(--sans); }

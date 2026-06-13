@@ -204,31 +204,96 @@
     );
   }
 
+  /* 住宿基地（四晚同一飯店）作為每天出發/回程的錨點 */
+  function homeNode() {
+    const h = META.home;
+    return h ? { id: "home", name: h.name, lat: h.lat, lng: h.lng, type: "hotel" } : null;
+  }
+  function isHomeStop(day, home) {
+    return day.stops.some((s) => Math.abs(s.lat - home.lat) < 1e-4 && Math.abs(s.lng - home.lng) < 1e-4);
+  }
+
+  /* 畫一段路線（白底襯線＋彩色線＋popup＋tooltip＋hover）*/
+  function addRouteSeg(group, day, latlngs, mode, popup, tooltip, weight) {
+    const w = weight || 4.5;
+    L.polyline(latlngs, { color: "#ffffff", weight: w + 2.5, opacity: 0.6, lineCap: "round", lineJoin: "round" }).addTo(group);
+    const line = L.polyline(latlngs, {
+      color: day.color, weight: w, opacity: 0.9,
+      dashArray: mode.dash || null, lineCap: "round", lineJoin: "round"
+    }).addTo(group);
+    if (popup) line.bindPopup(popup, { maxWidth: 290, maxHeight: 340 });
+    if (tooltip) line.bindTooltip(tooltip, { sticky: true, direction: "top", opacity: 0.95 });
+    line.on("mouseover", () => line.setStyle({ weight: w + 2 }));
+    line.on("mouseout", () => line.setStyle({ weight: w }));
+    return line;
+  }
+
+  function backPopupHtml(day, a, home) {
+    return (
+      '<div class="route-pp">' +
+        '<div class="rp-head"><span class="rp-ic">↩</span>' +
+          esc(a.name) + " → " + esc(home.name) + "（回飯店）</div>" +
+        '<div class="rp-text">' + esc(day.returnNote || "回飯店休息。") + "</div>" +
+        '<div class="rp-day" style="color:' + (day.colorText || day.color) +
+          '">● Day ' + day.n + " · 回程</div>" +
+      "</div>"
+    );
+  }
+
+  function addHomeMarker(group, home) {
+    const m = L.marker([home.lat, home.lng], {
+      icon: L.divIcon({ className: "home-marker", html: '<div class="hm-pin">🏨</div>',
+        iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -15] }),
+      riseOnHover: true, keyboard: false
+    });
+    m.bindPopup(
+      '<div class="route-pp"><div class="rp-head"><span class="rp-ic">🏨</span>' +
+        esc(home.name) + "（住宿·四晚）</div>" +
+        '<div class="rp-text">春吉·那珂川南岸；過河即中洲，步行到中洲屋台 4–5 分、一蘭 5–6 分、天神 7–10 分。四晚不換房。</div></div>',
+      { maxWidth: 262 });
+    m.addTo(group);
+    return m;
+  }
+
   function drawDay(day) {
     const group = L.layerGroup();
+    const home = homeNode();
     const pts = day.stops.map((s) => [s.lat, s.lng]);
 
+    // 出發：飯店 → 第一站（用第一站的 arrive 資訊）
+    if (home && day.fromHome) {
+      const b = day.stops[0];
+      const mode = MODES[b.arrive.mode] || MODES.rail;
+      const ll = ROUTES["d" + day.n + "-out"] || [[home.lat, home.lng], [b.lat, b.lng]];
+      addRouteSeg(group, day, ll, mode, routePopupHtml(day, home, b, mode), mode.icon + " 出發 · " + mode.label);
+      pts.push([home.lat, home.lng]);
+    }
+
+    // 景點之間
     for (let i = 1; i < day.stops.length; i++) {
       const a = day.stops[i - 1], b = day.stops[i];
       const mode = MODES[b.arrive.mode] || MODES.rail;
-      const latlngs = segLatLngs(a, b);
-      L.polyline(latlngs, { color: "#ffffff", weight: 7, opacity: 0.6, lineCap: "round", lineJoin: "round" }).addTo(group);
-      const baseW = 4.5;
-      const line = L.polyline(latlngs, {
-        color: day.color, weight: baseW, opacity: 0.9,
-        dashArray: mode.dash || null, lineCap: "round", lineJoin: "round"
-      }).addTo(group);
-      line.bindPopup(routePopupHtml(day, a, b, mode), { maxWidth: 290, maxHeight: 340 });
-      line.bindTooltip(mode.icon + " " + mode.label, { sticky: true, direction: "top", opacity: 0.95 });
-      line.on("mouseover", () => line.setStyle({ weight: baseW + 2 }));
-      line.on("mouseout", () => line.setStyle({ weight: baseW }));
+      addRouteSeg(group, day, segLatLngs(a, b), mode, routePopupHtml(day, a, b, mode), mode.icon + " " + mode.label);
     }
 
+    // 回程：最後一站 → 飯店
+    if (home && day.toHome) {
+      const a = day.stops[day.stops.length - 1];
+      const ll = ROUTES["d" + day.n + "-back"] || [[a.lat, a.lng], [home.lat, home.lng]];
+      addRouteSeg(group, day, ll, MODES.rail, backPopupHtml(day, a, home), "↩ 回飯店 · " + home.name);
+      pts.push([home.lat, home.lng]);
+    }
+
+    // 停點 marker
     day.stops.forEach((s, i) => {
       const m = makeMarker(s, day, i + 1);
       m.addTo(group);
       markerIndex[s.id] = m;
     });
+    // 飯店 marker（當天若飯店不是編號停點才加，例如 Day2–4）
+    if (home && (day.fromHome || day.toHome) && !isHomeStop(day, home)) {
+      addHomeMarker(group, home);
+    }
 
     group.addTo(map);
     viewLayer = group;
@@ -257,13 +322,27 @@
         })
       : L.layerGroup();
     const all = [];
+    const home = homeNode();
     DAYS.forEach((day) => {
+      // 出發：飯店 → 第一站
+      if (home && day.fromHome) {
+        const b = day.stops[0];
+        const mode = MODES[b.arrive.mode] || MODES.rail;
+        const ll = ROUTES["d" + day.n + "-out"] || [[home.lat, home.lng], [b.lat, b.lng]];
+        L.polyline(ll, { color: day.color, weight: 3, opacity: 0.6, dashArray: mode.dash || null, lineCap: "round", lineJoin: "round" }).addTo(group);
+      }
       for (let i = 1; i < day.stops.length; i++) {
         const a = day.stops[i - 1], b = day.stops[i];
         const mode = MODES[b.arrive.mode] || MODES.rail;
         L.polyline(segLatLngs(a, b), {
           color: day.color, weight: 3, opacity: 0.65, dashArray: mode.dash || null, lineCap: "round", lineJoin: "round"
         }).addTo(group);
+      }
+      // 回程：最後一站 → 飯店
+      if (home && day.toHome) {
+        const a = day.stops[day.stops.length - 1];
+        const ll = ROUTES["d" + day.n + "-back"] || [[a.lat, a.lng], [home.lat, home.lng]];
+        L.polyline(ll, { color: day.color, weight: 3, opacity: 0.45, dashArray: "3,8", lineCap: "round", lineJoin: "round" }).addTo(group);
       }
       day.stops.forEach((s, i) => {
         const m = L.marker([s.lat, s.lng], {
@@ -283,6 +362,7 @@
       });
     });
     group.addLayer(cluster);
+    if (home) { addHomeMarker(group, home); all.push([home.lat, home.lng]); }
     group.addTo(map);
     viewLayer = group;
     fitTo(all);
