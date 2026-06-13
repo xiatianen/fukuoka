@@ -17,7 +17,7 @@
 - **網站部署**：`git push origin main` → Cloudflare 自動部署。repo 是**純靜態**（無 package.json、無建置步驟）。
 - **網站驗證**：本機有 Chrome，可用 `--headless --screenshot` 截圖核對（HANDOFF §9 有指令）；改完務必截圖驗證再 push。
 - **簡報重生**：`PYTHONIOENCODING=utf-8 python build/make_all.py A` 後轉 PDF（HANDOFF §6）。⚠️ 若使用者用 **Adobe Acrobat** 開著舊 PDF 會鎖檔無法覆寫，需先關掉該程序。
-- **最新行程**：Day2＝小倉+皿倉山夜景；Day3＝太宰府+隈研吾星巴克+竈門神社+柳川川下り；每天約 10:00 出發（Day1 抵達、Day5 趕機例外）。詳見 HANDOFF §3。
+- **最新行程（第二輪省力動線版）**：Day1 抵達→Day2＝小倉+皿倉山夜景**＋宿小倉**→Day3＝**福岡室內悠閒日**（天神購物+shin shin+Canal City+一蘭演舞+中洲屋台，**不排 teamLab**）→Day4＝**太宰府+星巴克+竈門+柳川若松屋鰻魚+敘敘苑燒肉（輕裝）**→Day5 回程。住宿：福岡三晚 Hotel Il Palazzo＋8/8 宿小倉。每天約 10:00 出發（Day1 抵達、Day5 趕機例外）。詳見 HANDOFF §3。
 - **線上網址**在使用者的 Cloudflare 儀表板；`fukuoka.pages.dev` 是別人的同名專案、不是這個。
 
 ## 然後——待命
