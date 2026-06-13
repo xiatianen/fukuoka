@@ -301,6 +301,65 @@ html, body {
 .route-pp .rp-text { font-size: 11.5px; line-height: 1.65; color: #515b6b; margin-top: 6px; }
 .route-pp .rp-day { font-size: 10.5px; color: var(--muted); margin-top: 6px; }
 
+/* ====================== 交通明細 / 估價 / 訂票 / 預算 ====================== */
+/* 每段車（line/車種/時間/車資）*/
+.legs { margin-top: 7px; display: flex; flex-direction: column; gap: 4px; }
+.lg-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 1px 8px;
+  padding: 5px 9px; border-left: 3px solid var(--c, var(--accent)); border-radius: 6px;
+  background: rgba(31, 58, 96, .045);
+  background: color-mix(in srgb, var(--c, var(--primary)) 7%, #fff);
+  font-size: 10.5px; line-height: 1.42;
+}
+.lg-row .lg-seg { grid-column: 1; font-weight: 700; color: var(--ink); }
+.lg-row .lg-line { grid-column: 1; color: var(--muted); }
+.lg-row .lg-rt {
+  grid-column: 2; grid-row: 1 / span 2; align-self: center; text-align: right;
+  font-family: var(--serif); font-weight: 700; color: var(--ct, var(--accent-d)); white-space: nowrap;
+}
+.fare-line { margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--ink); line-height: 1.5; }
+.alt-line { margin-top: 4px; font-size: 10.5px; line-height: 1.55; color: var(--muted); }
+
+/* 訂票/預約連結（藥丸）*/
+.book-link {
+  display: inline-flex; align-items: center; gap: 3px; margin-top: 7px; margin-right: 6px;
+  font-size: 10.5px; font-weight: 700; color: #fff !important; text-decoration: none;
+  background: var(--ct, var(--accent-d)); padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.book-link:hover { filter: brightness(1.1); text-decoration: none; }
+
+/* 停點估價 */
+.cost-box {
+  margin-top: 8px; padding: 7px 10px; border-radius: 8px;
+  background: #FBF4E5; border: 1px solid #EAD9B0;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 8px;
+}
+.cost-box .cost-jpy { font-size: 11.5px; font-weight: 700; color: #6a5320; font-family: var(--serif); }
+.cost-box .cost-note { font-size: 10.5px; color: #8a7340; line-height: 1.5; flex: 1 1 100%; }
+.cost-box .book-link { margin-top: 3px; background: var(--accent-d); }
+
+/* 側欄歸途下方的訂票連結列 */
+.book-row { margin: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  animation: bodyIn .26s ease both; }
+.book-row .br-label { font-size: 11px; font-weight: 700; color: var(--accent-d); }
+.book-row .book-link { margin-top: 0; background: var(--accent-d); }
+
+/* 預算概估（資訊 Modal）*/
+.bud-note { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; line-height: 1.5; }
+.bud-list { display: flex; flex-direction: column; gap: 6px; }
+.bud-row {
+  display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+  font-size: 12.5px; padding: 8px 12px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 9px;
+}
+.bud-row span { color: #3f4858; line-height: 1.45; }
+.bud-row b { font-family: var(--serif); color: var(--accent-d); white-space: nowrap; }
+.bud-total {
+  margin-top: 10px; padding: 11px 13px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--ink), var(--primary)); color: #fff;
+  font-size: 13px; font-weight: 700; text-align: center; letter-spacing: .3px; line-height: 1.5;
+}
+
 /* ====================== 浮動控制：圖例 ====================== */
 .legend-toggle {
   position: fixed; z-index: 650;

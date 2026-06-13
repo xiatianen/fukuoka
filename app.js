@@ -40,6 +40,76 @@
     });
   }
 
+  /* 真實路徑幾何（routes.js）：以「到站」stopId 取用，無則退回兩點直線 */
+  const ROUTES = window.TRIP_ROUTES || {};
+  function segLatLngs(a, b) {
+    const r = ROUTES[b.id];
+    return (r && r.length >= 2) ? r : [[a.lat, a.lng], [b.lat, b.lng]];
+  }
+
+  const yen = (n) => "¥" + Number(n).toLocaleString("ja-JP");
+
+  /* 訂票/預約連結 */
+  function bookLink(book) {
+    if (!book || !book.url) return "";
+    return '<a class="book-link" href="' + esc(book.url) +
+      '" target="_blank" rel="noopener noreferrer">🎫 ' +
+      esc(book.label || "官方訂票 / 預約") + " ↗</a>";
+  }
+
+  /* 交通明細：每段車（line/車種/時間/車資）＋總車資＋班距＋替代＋訂票 */
+  function transHtml(arrive) {
+    if (!arrive) return "";
+    let h = "";
+    if (arrive.legs && arrive.legs.length) {
+      h += '<div class="legs">';
+      arrive.legs.forEach((l) => {
+        const right = [];
+        if (l.min != null) right.push(l.min + "分");
+        if (l.fare != null && l.fare !== "")
+          right.push(typeof l.fare === "number" ? yen(l.fare) : esc(l.fare));
+        h += '<div class="lg-row">' +
+               '<span class="lg-seg">' + esc(l.seg) + "</span>" +
+               '<span class="lg-line">' + esc(l.line) +
+                 (l.type ? " · " + esc(l.type) : "") + "</span>" +
+               '<span class="lg-rt">' + esc(right.join(" / ")) + "</span>" +
+             "</div>";
+      });
+      h += "</div>";
+    }
+    const meta = [];
+    if (arrive.fare) meta.push("💴 " + esc(arrive.fare));
+    if (arrive.freq) meta.push("🕒 " + esc(arrive.freq));
+    if (meta.length) h += '<div class="fare-line">' + meta.join("　") + "</div>";
+    if (arrive.alt) h += '<div class="alt-line">↺ ' + esc(arrive.alt) + "</div>";
+    if (arrive.book) h += bookLink(arrive.book);
+    return h;
+  }
+
+  /* 停點估價 */
+  function costHtml(stop) {
+    if (!stop.cost) return "";
+    const c = stop.cost;
+    return '<div class="cost-box">' +
+             '<span class="cost-jpy">💰 ' + esc(c.jpy) + "</span>" +
+             (c.note ? '<span class="cost-note">' + esc(c.note) + "</span>" : "") +
+             (c.book ? bookLink(c.book) : "") +
+           "</div>";
+  }
+
+  /* 預算概估（資訊 Modal 用） */
+  function budgetHtml(b) {
+    if (!b) return "";
+    return '<div class="m-section"><div class="ms-label">💰 預算概估</div>' +
+      '<div class="bud-note">' + esc(b.note) + "</div>" +
+      '<div class="bud-list">' +
+        b.rows.map((r) =>
+          '<div class="bud-row"><span>' + esc(r.label) + "</span><b>" + esc(r.val) + "</b></div>"
+        ).join("") +
+      "</div>" +
+      '<div class="bud-total">' + esc(b.total) + "</div></div>";
+  }
+
   /* ---------------- 狀態 ---------------- */
   let map;
   let currentDay = 1;                 // 0 = 總覽；1..5 = 各日
@@ -102,7 +172,7 @@
     });
     const m = L.marker([stop.lat, stop.lng], { icon: icon, riseOnHover: true, keyboard: false });
     m.bindPopup(popupHtml(stop, day, num), {
-      maxWidth: 300, minWidth: 252, closeButton: true, autoPanPadding: [28, 28]
+      maxWidth: 300, minWidth: 252, maxHeight: 360, closeButton: true, autoPanPadding: [28, 28]
     });
     m.on("click", () => setActiveStop(stop.id, { source: "map" }));
     return m;
@@ -128,6 +198,8 @@
         '<div class="pp-desc">' + esc(stop.desc) + "</div>" +
         '<div class="pp-trans"><span class="t-ic">' + mode.icon + "</span>" +
           "<span>" + esc(stop.arrive.text) + "</span></div>" +
+        transHtml(stop.arrive) +
+        costHtml(stop) +
       "</div></div>"
     );
   }
@@ -139,14 +211,14 @@
     for (let i = 1; i < day.stops.length; i++) {
       const a = day.stops[i - 1], b = day.stops[i];
       const mode = MODES[b.arrive.mode] || MODES.rail;
-      const latlngs = [[a.lat, a.lng], [b.lat, b.lng]];
-      L.polyline(latlngs, { color: "#ffffff", weight: 7, opacity: 0.6, lineCap: "round" }).addTo(group);
+      const latlngs = segLatLngs(a, b);
+      L.polyline(latlngs, { color: "#ffffff", weight: 7, opacity: 0.6, lineCap: "round", lineJoin: "round" }).addTo(group);
       const baseW = 4.5;
       const line = L.polyline(latlngs, {
         color: day.color, weight: baseW, opacity: 0.9,
         dashArray: mode.dash || null, lineCap: "round", lineJoin: "round"
       }).addTo(group);
-      line.bindPopup(routePopupHtml(day, a, b, mode), { maxWidth: 290 });
+      line.bindPopup(routePopupHtml(day, a, b, mode), { maxWidth: 290, maxHeight: 340 });
       line.bindTooltip(mode.icon + " " + mode.label, { sticky: true, direction: "top", opacity: 0.95 });
       line.on("mouseover", () => line.setStyle({ weight: baseW + 2 }));
       line.on("mouseout", () => line.setStyle({ weight: baseW }));
@@ -189,8 +261,8 @@
       for (let i = 1; i < day.stops.length; i++) {
         const a = day.stops[i - 1], b = day.stops[i];
         const mode = MODES[b.arrive.mode] || MODES.rail;
-        L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
-          color: day.color, weight: 3, opacity: 0.65, dashArray: mode.dash || null, lineCap: "round"
+        L.polyline(segLatLngs(a, b), {
+          color: day.color, weight: 3, opacity: 0.65, dashArray: mode.dash || null, lineCap: "round", lineJoin: "round"
         }).addTo(group);
       }
       day.stops.forEach((s, i) => {
@@ -203,7 +275,7 @@
           }),
           riseOnHover: true, keyboard: false
         });
-        m.bindPopup(popupHtml(s, day, i + 1), { maxWidth: 300, minWidth: 252, autoPanPadding: [28, 28] });
+        m.bindPopup(popupHtml(s, day, i + 1), { maxWidth: 300, minWidth: 252, maxHeight: 360, autoPanPadding: [28, 28] });
         m.on("click", () => setActiveStop(s.id, { source: "map" }));
         cluster.addLayer(m);
         markerIndex[s.id] = m;
@@ -222,6 +294,7 @@
         '<div class="rp-head"><span class="rp-ic">' + mode.icon + "</span>" +
           esc(a.name) + " → " + esc(b.name) + "</div>" +
         '<div class="rp-text">' + esc(b.arrive.text) + "</div>" +
+        transHtml(b.arrive) +
         '<div class="rp-day" style="color:' + (day.colorText || day.color) +
           '">● Day ' + day.n + " · " + esc(day.theme) + "</div>" +
       "</div>"
@@ -350,7 +423,7 @@
       leg.style.setProperty("--c", day.color);
       leg.innerHTML =
         '<div class="leg-ic">' + mode.icon + "</div>" +
-        '<div class="leg-tx">' + esc(s.arrive.text) + "</div>";
+        '<div class="leg-tx">' + esc(s.arrive.text) + transHtml(s.arrive) + "</div>";
       tl.appendChild(leg);
 
       const ti = TYPE_ICON[s.type] || "📍";
@@ -367,6 +440,7 @@
             '<span class="sc-name">' + esc(s.name) + "</span>" +
           "</div>" +
           '<div class="sc-desc">' + esc(s.desc) + "</div>" +
+          costHtml(s) +
           (s.photo
             ? '<div class="sc-photo"><img src="' + s.photo + '" alt="' + esc(s.name) +
               ' 照片" loading="lazy" onerror="this.parentNode.style.display=\'none\'"></div>'
@@ -381,6 +455,12 @@
     if (day.returnNote) {
       const rn = el("div", "return-note", "<b>↩ 歸途 / 收尾</b><br>" + esc(day.returnNote));
       body.appendChild(rn);
+    }
+    if (day.bookLinks && day.bookLinks.length) {
+      const bl = el("div", "book-row");
+      bl.innerHTML = '<span class="br-label">🎫 訂票 / 預約</span>' +
+        day.bookLinks.map(bookLink).join("");
+      body.appendChild(bl);
     }
     appendFooter(body);
   }
@@ -550,7 +630,8 @@
             '<div class="dp-tx"><b>' + esc(d.label) + "</b>" + esc(d.text) + "</div></div>"
           ).join("") +
         "</div></div>" +
-      '<div class="m-foot">本地圖依「方案 A · 經典均衡」整理 · 交通班次／票價請出發前以乘換案內再次確認<br>' +
+      budgetHtml(META.budget) +
+      '<div class="m-foot">本地圖依「方案 A · 經典均衡」整理 · 交通班次／票價／房價為概估，出發前請以官方／乘換案內再次確認<br>' +
         '圖片來源：Wikimedia Commons（自由授權）</div>';
 
     let lastFocus = null;
