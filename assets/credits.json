@@ -248,5 +248,35 @@
       1400,
       788
     ]
+  },
+  "kokura": {
+    "name": "小倉城・街區",
+    "source": "wiki",
+    "file": "Kokura-jo-teien.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Kokura-jo-teien.jpg",
+    "size": [
+      1400,
+      1050
+    ]
+  },
+  "kamado": {
+    "name": "宝満宮竈門神社",
+    "source": "search",
+    "file": "Haiden of Kamado Shrine 3.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Haiden of Kamado Shrine 3.jpg",
+    "size": [
+      1400,
+      1050
+    ]
+  },
+  "yanagawa": {
+    "name": "柳川川下り",
+    "source": "wiki",
+    "file": "Fukuoka Yanagawa03bs3200.jpg",
+    "url": "https://commons.wikimedia.org/wiki/File:Fukuoka Yanagawa03bs3200.jpg",
+    "size": [
+      1400,
+      1050
+    ]
   }
 }
