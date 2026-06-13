@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>福岡 5天4夜 · 經典均衡 — 互動行程地圖</title>
+  <meta name="description" content="福岡 8/7–8/11 五天四夜（方案 A 經典均衡）互動式行程地圖：逐日路線、景點與所有交通方式，手機電腦皆友善。" />
+  <meta name="theme-color" content="#15233F" />
+  <meta property="og:title" content="福岡 5天4夜 · 經典均衡 — 互動行程地圖" />
+  <meta property="og:description" content="逐日路線、景點與所有交通方式，一圖看懂。" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 載入畫面 -->
+  <div id="loader">
+    <div>
+      <div class="l-spin"></div>
+      <div class="l-t">福岡 5天4夜</div>
+      <div class="l-s">經典均衡 · 互動行程地圖載入中…</div>
+    </div>
+  </div>
+
+  <div id="app">
+    <!-- 側欄 / 底部抽屜 -->
+    <aside id="sidebar">
+      <div class="sheet-handle" id="sheetHandle">
+        <div class="grip"></div>
+        <div class="hint">上滑看行程 · 下滑看地圖</div>
+      </div>
+
+      <div class="brandbar">
+        <div class="topbtns">
+          <button class="iconbtn" id="infoBtn" title="行程資訊" aria-label="行程資訊">ℹ</button>
+        </div>
+        <h1 id="brandTitle">福岡 5天4夜</h1>
+        <div class="dates" id="brandDates"></div>
+        <div class="musts" id="brandMusts"></div>
+      </div>
+
+      <div class="day-tabs" id="dayTabs"></div>
+      <div class="day-body" id="dayBody"></div>
+    </aside>
+
+    <!-- 地圖 -->
+    <div id="map"></div>
+  </div>
+
+  <!-- 圖例 -->
+  <button class="legend-toggle" id="legendToggle">🗺️ 圖例</button>
+  <div class="legend-panel hidden" id="legendPanel"></div>
+
+  <!-- 資訊 Modal -->
+  <div class="modal-mask hidden" id="infoModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="行程資訊">
+      <div class="m-head">
+        <button class="m-close" id="modalClose" aria-label="關閉">×</button>
+        <h2>方案 A · 經典均衡</h2>
+        <div class="m-sub">福岡 5 天 4 夜 — 規劃前提與邏輯</div>
+      </div>
+      <div class="m-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

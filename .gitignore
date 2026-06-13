@@ -1,0 +1,16 @@
+# 本地工具與大型產出（不需部署到網站）
+.claude/
+node_modules/
+build/
+decks/
+*.pptx
+*.pdf
+full.xlsx
+sheet_925871456.csv
+
+# 暫存 / 系統檔
+.DS_Store
+Thumbs.db
+*.log
+_smoke*.png
+.chrometmp/
