@@ -29,7 +29,8 @@
 - **狀態**：
   - ✅ **互動式網頁地圖**：完成 → 多輪審查修正 → 推上 GitHub `xiatianen/fukuoka` → Cloudflare Pages 自動部署。
   - ✅ **簡報 PPTX/PDF**：依「最新行程」重新產生並逐頁驗證（本機 `decks\`）。
-  - ✅ 行程已做過兩輪大改（見 §3）：第一輪 Day2 改小倉、加竈門神社+柳川、每天 10:00 出發；**第二輪（最新）Day3／Day4 對調為省力動線、北九州一晚宿小倉、福岡基地改 Hotel Il Palazzo、8/9 砍 teamLab、加 shin shin/若松屋/敘敘苑/天開稻荷、糸島整批不納入**。
+  - ✅ 行程已做過兩輪大改（見 §3）：第一輪 Day2 改小倉、加竈門神社+柳川、每天 10:00 出發；**第二輪 Day3／Day4 對調為省力動線、北九州一晚宿小倉、福岡基地改 Hotel Il Palazzo、8/9 砍 teamLab、加 shin shin/若松屋/敘敘苑/天開稻荷、糸島整批不納入**。
+  - ✅ **第三輪（最新）交通與費用大強化**：① 地圖路線改畫**真實路徑**（`routes.js`：道路段 OSRM、鐵道段真實轉乘站，不再直線）② 每停點交通細到「**每班車**」（`data.js` 的 `arrive.legs[]`＝路線/車種/時間/車資）＋總車資/班距/省錢替代 ③ **訂票連結**（`arrive.book`／`cost.book`／`day.bookLinks`）④ **各停點估價**（`arrive` 旁的 `stop.cost`）⑤ 資訊視窗＋簡報新增**預算概估**（`META.budget`／`plan.budget`）⑥ 簡報新增「交通・訂票・預算」整頁（`deckkit.js` 的 `transportSlide`、讀 `plan.transport`/`plan.budget`）。所有車資/票價/房價為 2025–2026 並行查證之概估。
 
 ---
 
