@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>福岡 5天4夜 · 經典均衡 — 互動行程地圖</title>
   <meta name="description" content="福岡 8/7–8/11 五天四夜（方案 A 經典均衡）互動式行程地圖：逐日路線、景點與所有交通方式，手機電腦皆友善。" />
   <meta name="theme-color" content="#15233F" />
@@ -34,7 +34,7 @@
 
       <div class="brandbar">
         <div class="topbtns">
-          <button class="iconbtn" id="infoBtn" title="行程資訊" aria-label="行程資訊">ℹ</button>
+          <button type="button" class="iconbtn" id="infoBtn" title="行程資訊" aria-label="行程資訊">ℹ</button>
         </div>
         <h1 id="brandTitle">福岡 5天4夜</h1>
         <div class="dates" id="brandDates"></div>
@@ -49,15 +49,18 @@
     <div id="map"></div>
   </div>
 
+  <!-- 手機抽屜展開時的遮罩（擋住背景地圖誤觸） -->
+  <div id="sheetScrim"></div>
+
   <!-- 圖例 -->
-  <button class="legend-toggle" id="legendToggle">🗺️ 圖例</button>
+  <button type="button" class="legend-toggle" id="legendToggle" aria-label="顯示圖例">🗺️ 圖例</button>
   <div class="legend-panel hidden" id="legendPanel"></div>
 
   <!-- 資訊 Modal -->
   <div class="modal-mask hidden" id="infoModal">
     <div class="modal" role="dialog" aria-modal="true" aria-label="行程資訊">
       <div class="m-head">
-        <button class="m-close" id="modalClose" aria-label="關閉">×</button>
+        <button type="button" class="m-close" id="modalClose" aria-label="關閉">×</button>
         <h2>方案 A · 經典均衡</h2>
         <div class="m-sub">福岡 5 天 4 夜 — 規劃前提與邏輯</div>
       </div>

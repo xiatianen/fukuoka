@@ -12,5 +12,6 @@ sheet_925871456.csv
 .DS_Store
 Thumbs.db
 *.log
-_smoke*.png
+_*.png
+_*.html
 .chrometmp/

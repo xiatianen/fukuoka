@@ -23,6 +23,22 @@
   };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const cssEsc = (s) =>
+    (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&");
+
+  /* 讓任意元素可點擊 + 鍵盤可操作（Enter/Space） */
+  function clickable(node, handler, aria) {
+    node.tabIndex = 0;
+    node.setAttribute("role", "button");
+    if (aria) node.setAttribute("aria-label", aria);
+    node.addEventListener("click", handler);
+    node.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        handler(e);
+      }
+    });
+  }
 
   /* ---------------- 狀態 ---------------- */
   let map;
@@ -30,11 +46,13 @@
   let viewLayer = null;               // 當前圖層（markers + routes）
   const markerIndex = {};             // stopId -> L.marker
   let activeStopId = null;
+  let lastFitPoints = null;           // resize 時重算視野用
+  let popupTimer = null;              // 由列表觸發飛行後開 popup 的計時器
 
   /* ---------------- 地圖初始化 ---------------- */
   function initMap() {
     map = L.map("map", {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: true,
       scrollWheelZoom: true,
       tap: true,
@@ -43,27 +61,37 @@
       zoomSnap: 0.25
     });
     L.control.zoom({ position: "topleft" }).addTo(map);
-    map.zoomControl.setPosition("topleft");
 
-    L.tileLayer(
+    const tiles = L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
       {
         subdomains: "abcd",
         maxZoom: 19,
         detectRetina: false,
+        crossOrigin: true,
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
       }
     ).addTo(map);
 
-    // 預設視野：福岡都會圈
+    // 底圖出現即收掉載入畫面（含後備計時，避免某些情況不觸發）
+    let loaderHidden = false;
+    const hideLoader = () => {
+      if (loaderHidden) return;
+      loaderHidden = true;
+      $("#loader").classList.add("hidden");
+    };
+    tiles.on("load", hideLoader);
+    map.whenReady(() => setTimeout(hideLoader, 400));
+    setTimeout(hideLoader, 2200);
+
     map.setView([33.62, 130.5], 9);
   }
 
   /* ---------------- 繪製：marker 與路線 ---------------- */
-  function makeMarker(stop, color, num) {
+  function makeMarker(stop, day, num) {
     const html =
-      '<div class="dm-pin" style="background:' + color + '">' +
+      '<div class="dm-pin" style="background:' + day.color + '">' +
       '<span class="dm-num">' + num + "</span></div>";
     const icon = L.divIcon({
       className: "day-marker",
@@ -73,26 +101,29 @@
       popupAnchor: [0, -17]
     });
     const m = L.marker([stop.lat, stop.lng], { icon: icon, riseOnHover: true, keyboard: false });
-    m.bindPopup(popupHtml(stop, color), {
-      maxWidth: 260, minWidth: 248, closeButton: true, autoPanPadding: [30, 30]
+    m.bindPopup(popupHtml(stop, day, num), {
+      maxWidth: 300, minWidth: 252, closeButton: true, autoPanPadding: [28, 28]
     });
-    m.on("click", () => setActiveStop(stop.id, { fromMap: true }));
-    m.on("popupopen", () => setActiveStop(stop.id, { fromMap: true, noFly: true }));
+    m.on("click", () => setActiveStop(stop.id, { source: "map" }));
     return m;
   }
 
-  function popupHtml(stop, color) {
+  function popupHtml(stop, day, num) {
     const ti = TYPE_ICON[stop.type] || "📍";
     const mode = MODES[stop.arrive.mode] || MODES.start;
     const photo = stop.photo
       ? '<div class="pp-photo"><img src="' + stop.photo + '" alt="' + esc(stop.name) +
-        '" loading="lazy" onerror="this.parentNode.style.display=\'none\'"></div>'
+        ' 照片" loading="lazy" onerror="this.parentNode.style.display=\'none\'"></div>'
       : "";
     return (
-      '<div class="pp" style="--c:' + color + '">' +
+      '<div class="pp" style="--c:' + day.color + ';--ct:' + (day.colorText || day.color) + '">' +
       photo +
       '<div class="pp-body">' +
-        '<span class="pp-time">' + esc(stop.time) + "</span>" +
+        '<div class="pp-meta">' +
+          '<span class="pp-time">' + esc(stop.time) + "</span>" +
+          '<span class="pp-day" style="color:' + (day.colorText || day.color) +
+            '">● Day ' + day.n + " · " + esc(day.date) + "</span>" +
+        "</div>" +
         '<div class="pp-name">' + ti + " " + esc(stop.name) + "</div>" +
         '<div class="pp-desc">' + esc(stop.desc) + "</div>" +
         '<div class="pp-trans"><span class="t-ic">' + mode.icon + "</span>" +
@@ -105,30 +136,24 @@
     const group = L.layerGroup();
     const pts = day.stops.map((s) => [s.lat, s.lng]);
 
-    // 路線（兩兩相連，依交通方式上線型）
     for (let i = 1; i < day.stops.length; i++) {
       const a = day.stops[i - 1], b = day.stops[i];
       const mode = MODES[b.arrive.mode] || MODES.rail;
       const latlngs = [[a.lat, a.lng], [b.lat, b.lng]];
-      // 白色外襯，提升於底圖上的辨識度
       L.polyline(latlngs, { color: "#ffffff", weight: 7, opacity: 0.6, lineCap: "round" }).addTo(group);
+      const baseW = 4.5;
       const line = L.polyline(latlngs, {
-        color: day.color,
-        weight: 4.5,
-        opacity: 0.9,
-        dashArray: mode.dash || null,
-        lineCap: "round",
-        lineJoin: "round"
+        color: day.color, weight: baseW, opacity: 0.9,
+        dashArray: mode.dash || null, lineCap: "round", lineJoin: "round"
       }).addTo(group);
-      line.bindPopup(routePopupHtml(day, a, b, mode), { maxWidth: 250 });
+      line.bindPopup(routePopupHtml(day, a, b, mode), { maxWidth: 290 });
       line.bindTooltip(mode.icon + " " + mode.label, { sticky: true, direction: "top", opacity: 0.95 });
-      line.on("mouseover", () => line.setStyle({ weight: 6.5 }));
-      line.on("mouseout", () => line.setStyle({ weight: 4.5 }));
+      line.on("mouseover", () => line.setStyle({ weight: baseW + 2 }));
+      line.on("mouseout", () => line.setStyle({ weight: baseW }));
     }
 
-    // markers
     day.stops.forEach((s, i) => {
-      const m = makeMarker(s, day.color, i + 1);
+      const m = makeMarker(s, day, i + 1);
       m.addTo(group);
       markerIndex[s.id] = m;
     });
@@ -141,18 +166,35 @@
   function drawOverview() {
     const group = L.layerGroup();
     const all = [];
+    const seen = {};   // 同座標微量散開，避免重疊不可點
     DAYS.forEach((day) => {
-      const pts = day.stops.map((s) => [s.lat, s.lng]);
-      // 路線（總覽用較細、半透明，避免雜亂）
       for (let i = 1; i < day.stops.length; i++) {
         const a = day.stops[i - 1], b = day.stops[i];
         const mode = MODES[b.arrive.mode] || MODES.rail;
         L.polyline([[a.lat, a.lng], [b.lat, b.lng]], {
-          color: day.color, weight: 3, opacity: 0.7, dashArray: mode.dash || null, lineCap: "round"
+          color: day.color, weight: 3, opacity: 0.65, dashArray: mode.dash || null, lineCap: "round"
         }).addTo(group);
       }
       day.stops.forEach((s, i) => {
-        const m = makeMarker(s, day.color, i + 1);
+        let lat = s.lat, lng = s.lng;
+        const k = lat.toFixed(3) + "," + lng.toFixed(3);
+        const c = seen[k] || 0; seen[k] = c + 1;
+        if (c > 0) {                       // 第 2+ 個重合點，繞圈散開（約 80–120m）
+          const ang = c * 2.39996;
+          lat += 0.0009 * Math.cos(ang);
+          lng += 0.0011 * Math.sin(ang);
+        }
+        const m = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: "day-marker",
+            html: '<div class="dm-pin" style="background:' + day.color + '"><span class="dm-num">' +
+              (i + 1) + "</span></div>",
+            iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -17]
+          }),
+          riseOnHover: true, keyboard: false
+        });
+        m.bindPopup(popupHtml(s, day, i + 1), { maxWidth: 300, minWidth: 252, autoPanPadding: [28, 28] });
+        m.on("click", () => setActiveStop(s.id, { source: "map" }));
         m.addTo(group);
         markerIndex[s.id] = m;
         all.push([s.lat, s.lng]);
@@ -169,67 +211,76 @@
         '<div class="rp-head"><span class="rp-ic">' + mode.icon + "</span>" +
           esc(a.name) + " → " + esc(b.name) + "</div>" +
         '<div class="rp-text">' + esc(b.arrive.text) + "</div>" +
-        '<div class="rp-day" style="color:' + day.color + '">● Day ' + day.n + " · " + esc(day.theme) + "</div>" +
+        '<div class="rp-day" style="color:' + (day.colorText || day.color) +
+          '">● Day ' + day.n + " · " + esc(day.theme) + "</div>" +
       "</div>"
     );
   }
 
   function fitTo(points) {
-    if (!points.length) return;
+    if (!points || !points.length) return;
+    lastFitPoints = points;
+    const mob = isMobile();
     if (points.length === 1) {
       map.setView(points[0], 14, { animate: true });
+      if (mob) map.panBy([0, 90], { animate: false }); // 把目標上移，避開底部抽屜
       return;
     }
     const bounds = L.latLngBounds(points);
-    const mob = isMobile();
     map.fitBounds(bounds, {
-      paddingTopLeft: [mob ? 30 : 60, mob ? 70 : 60],
-      paddingBottomRight: [mob ? 30 : 60, mob ? 170 : 60],
+      paddingTopLeft: [mob ? 30 : 60, mob ? 74 : 60],
+      paddingBottomRight: [mob ? 30 : 60, mob ? 196 : 60],
       maxZoom: 15,
       animate: true
     });
   }
 
   function clearView() {
+    if (popupTimer) { clearTimeout(popupTimer); popupTimer = null; }
     if (viewLayer) { map.removeLayer(viewLayer); viewLayer = null; }
     for (const k in markerIndex) delete markerIndex[k];
     activeStopId = null;
   }
 
   /* ---------------- 互動：選定停點 ---------------- */
-  function setActiveStop(stopId, opts) {
-    opts = opts || {};
-    activeStopId = stopId;
-
-    // 列表高亮
-    document.querySelectorAll(".tl-stop").forEach((n) => {
-      n.classList.toggle("active", n.dataset.id === stopId);
-    });
-
-    const stop = findStop(stopId);
-    if (!stop) return;
-    const m = markerIndex[stopId];
-
-    if (!opts.fromMap && m) {
-      // 由列表觸發：飛到 marker 並開 popup
-      const targetZoom = Math.max(map.getZoom(), 14);
-      map.flyTo([stop.lat, stop.lng], targetZoom, { duration: 0.6 });
-      map.once("moveend", () => m.openPopup());
-      if (isMobile()) collapseSheet();   // 手機：收起抽屜以看地圖
-    } else if (opts.fromMap) {
-      // 由地圖觸發：捲動列表至該卡片
-      const card = document.querySelector('.tl-stop[data-id="' + cssEsc(stopId) + '"]');
-      if (card && !isMobile()) card.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    document.querySelectorAll(".day-marker").forEach((n) => n.classList.remove("active"));
-    if (m && m._icon) m._icon.classList.add("active");
-  }
-
-  function cssEsc(s) { return String(s).replace(/"/g, '\\"'); }
   function findStop(id) {
     for (const d of DAYS) for (const s of d.stops) if (s.id === id) return s;
     return null;
+  }
+
+  function focusStop(stop, m) {
+    const targetZoom = Math.max(map.getZoom(), 14);
+    map.flyTo([stop.lat, stop.lng], targetZoom, { duration: 0.6 });
+    if (popupTimer) clearTimeout(popupTimer);
+    if (m) popupTimer = setTimeout(() => m.openPopup(), 640); // 不依賴 moveend，必定開啟
+  }
+
+  function setActiveStop(stopId, opts) {
+    opts = opts || {};
+    const stop = findStop(stopId);
+    if (!stop) return;
+    const m = markerIndex[stopId];
+    const already = activeStopId === stopId;
+    activeStopId = stopId;
+
+    // 列表卡片高亮
+    document.querySelectorAll(".tl-stop").forEach((n) =>
+      n.classList.toggle("active", n.dataset.id === stopId));
+    // marker 高亮
+    document.querySelectorAll(".day-marker").forEach((n) => n.classList.remove("active"));
+    if (m && m._icon) m._icon.classList.add("active");
+
+    if (opts.source === "list") {
+      focusStop(stop, m);
+      if (isMobile()) collapseSheet();
+    } else if (opts.source === "map") {
+      // marker 點擊：Leaflet 會自行開 popup，這裡只同步列表
+      if (popupTimer) { clearTimeout(popupTimer); popupTimer = null; }
+      if (!already && !isMobile()) {
+        const card = document.querySelector('.tl-stop[data-id="' + cssEsc(stopId) + '"]');
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
   }
 
   /* ---------------- 側欄渲染 ---------------- */
@@ -239,20 +290,28 @@
 
     const all = el("div", "day-tab all" + (currentDay === 0 ? " active" : ""));
     all.style.setProperty("--c", "var(--accent)");
+    all.style.setProperty("--ct", "var(--accent-d)");
     all.innerHTML = '<div class="dt-day">全程</div><div class="dt-date">總覽</div><div class="dt-dot"></div>';
-    all.addEventListener("click", () => selectDay(0));
+    clickable(all, () => selectDay(0), "全程總覽");
     tabs.appendChild(all);
 
     DAYS.forEach((d) => {
       const t = el("div", "day-tab" + (currentDay === d.n ? " active" : ""));
       t.style.setProperty("--c", d.color);
+      t.style.setProperty("--ct", d.colorText || d.color);
       t.innerHTML =
         '<div class="dt-day">Day ' + d.n + "</div>" +
         '<div class="dt-date">' + esc(d.date) + "</div>" +
         '<div class="dt-dot"></div>';
-      t.addEventListener("click", () => selectDay(d.n));
+      clickable(t, () => selectDay(d.n), "Day " + d.n + " " + d.date + " " + d.dow);
       tabs.appendChild(t);
     });
+
+    // 讓目前選取的分頁置中（手機橫向捲動提示）
+    const active = tabs.querySelector(".day-tab.active");
+    if (active && active.scrollIntoView) {
+      try { active.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {}
+    }
   }
 
   function renderBody() {
@@ -263,6 +322,7 @@
 
     const day = DAYS[currentDay - 1];
     body.style.setProperty("--c", day.color);
+    body.style.setProperty("--ct", day.colorText || day.color);
 
     const head = el("div", "day-head");
     head.style.setProperty("--c", day.color);
@@ -273,7 +333,6 @@
 
     const tl = el("div", "timeline");
     day.stops.forEach((s, i) => {
-      // 交通段（抵達此停點）
       const mode = MODES[s.arrive.mode] || MODES.start;
       const leg = el("div", "tl-leg");
       leg.style.setProperty("--c", day.color);
@@ -282,11 +341,11 @@
         '<div class="leg-tx">' + esc(s.arrive.text) + "</div>";
       tl.appendChild(leg);
 
-      // 停點卡片
       const ti = TYPE_ICON[s.type] || "📍";
       const stop = el("div", "tl-stop");
       stop.dataset.id = s.id;
       stop.style.setProperty("--c", day.color);
+      stop.style.setProperty("--ct", day.colorText || day.color);
       stop.innerHTML =
         '<div class="stop-rail"><div class="stop-num">' + (i + 1) + "</div></div>" +
         '<div class="stop-card">' +
@@ -298,10 +357,11 @@
           '<div class="sc-desc">' + esc(s.desc) + "</div>" +
           (s.photo
             ? '<div class="sc-photo"><img src="' + s.photo + '" alt="' + esc(s.name) +
-              '" loading="lazy" onerror="this.parentNode.style.display=\'none\'"></div>'
+              ' 照片" loading="lazy" onerror="this.parentNode.style.display=\'none\'"></div>'
             : "") +
         "</div>";
-      stop.addEventListener("click", () => setActiveStop(s.id, { fromList: true }));
+      clickable(stop, () => setActiveStop(s.id, { source: "list" }),
+        s.time + " " + s.name);
       tl.appendChild(stop);
     });
     body.appendChild(tl);
@@ -323,6 +383,7 @@
     DAYS.forEach((d) => {
       const card = el("div", "tl-stop");
       card.style.setProperty("--c", d.color);
+      card.style.setProperty("--ct", d.colorText || d.color);
       const spotNames = d.stops.map((s) => s.name).join("・");
       card.innerHTML =
         '<div class="stop-rail"><div class="stop-num">' + d.n + "</div></div>" +
@@ -332,10 +393,9 @@
             '<span class="sc-name">' + esc(d.theme) + "</span>" +
           "</div>" +
           '<div class="sc-desc" style="-webkit-line-clamp:2">' + esc(d.summary) + "</div>" +
-          '<div style="margin-top:7px;font-size:10.5px;color:#8A93A3;line-height:1.5">📍 ' +
-            esc(spotNames) + "</div>" +
+          '<div class="sc-spots">📍 ' + esc(spotNames) + "</div>" +
         "</div>";
-      card.addEventListener("click", () => selectDay(d.n));
+      clickable(card, () => selectDay(d.n), "Day " + d.n + " " + d.theme);
       wrap.appendChild(card);
     });
     body.appendChild(wrap);
@@ -350,42 +410,84 @@
     if (n === 0) drawOverview();
     else drawDay(DAYS[n - 1]);
     $("#dayBody").scrollTop = 0;
+    try {
+      const hash = "#d" + n;
+      if (location.hash !== hash) history.replaceState(null, "", hash);
+    } catch (e) { /* file:// 受限，忽略 */ }
+  }
+
+  function dayFromHash() {
+    const m = /^#d([0-5])$/.exec(location.hash || "");
+    return m ? parseInt(m[1], 10) : null;
   }
 
   /* ---------------- 手機底部抽屜 ---------------- */
-  function expandSheet() { if (isMobile()) $("#sidebar").classList.add("expanded"); }
-  function collapseSheet() { $("#sidebar").classList.remove("expanded"); }
-  function toggleSheet() { $("#sidebar").classList.toggle("expanded"); }
+  function setScrim(on) {
+    const s = $("#sheetScrim");
+    if (s) s.classList.toggle("show", !!on && isMobile());
+  }
+  function expandSheet() {
+    if (!isMobile()) return;
+    $("#sidebar").classList.add("expanded");
+    setScrim(true);
+  }
+  function collapseSheet() {
+    $("#sidebar").classList.remove("expanded");
+    setScrim(false);
+  }
+  function toggleSheet() {
+    if ($("#sidebar").classList.contains("expanded")) collapseSheet();
+    else expandSheet();
+  }
 
   function initSheet() {
     const handle = $("#sheetHandle");
-    handle.addEventListener("click", toggleSheet);
+    let movedGesture = false, suppressClickUntil = 0;
 
-    // 觸控拖曳（增強，非必要；點擊把手永遠可用）
+    handle.addEventListener("click", () => {
+      if (Date.now() < suppressClickUntil) return; // 拖曳後抑制合成 click
+      toggleSheet();
+    });
+
     let startY = null, startExpanded = false;
     handle.addEventListener("touchstart", (e) => {
       startY = e.touches[0].clientY;
       startExpanded = $("#sidebar").classList.contains("expanded");
+      movedGesture = false;
     }, { passive: true });
     handle.addEventListener("touchmove", (e) => {
       if (startY == null) return;
       const dy = e.touches[0].clientY - startY;
-      if (!startExpanded && dy < -34) { expandSheet(); startY = null; }
-      else if (startExpanded && dy > 34) { collapseSheet(); startY = null; }
+      if (!startExpanded && dy < -34) { expandSheet(); movedGesture = true; startY = null; }
+      else if (startExpanded && dy > 34) { collapseSheet(); movedGesture = true; startY = null; }
     }, { passive: true });
-    handle.addEventListener("touchend", () => { startY = null; });
+    handle.addEventListener("touchend", () => {
+      startY = null;
+      if (movedGesture) suppressClickUntil = Date.now() + 400;
+    });
+
+    const scrim = $("#sheetScrim");
+    if (scrim) scrim.addEventListener("click", collapseSheet);
   }
 
-  /* ---------------- 圖例 ---------------- */
+  /* ---------------- 圖例（動態列出實際用到的交通方式）---------------- */
   function initLegend() {
     const panel = $("#legendPanel");
     let html = '<h4>各日路線（顏色）</h4>';
     DAYS.forEach((d) => {
       html += '<div class="legend-row"><span class="lg-day-dot" style="background:' + d.color +
-        '"></span><span class="lg-tx">Day ' + d.n + " · " + esc(d.date) + " " + esc(d.dow) + "</span></div>";
+        '"></span><span class="lg-tx"><b>D' + d.n + "</b> · " + esc(d.date) + " " + esc(d.dow) + "</span></div>";
     });
+
+    // 收集 DAYS 中實際出現的交通模式（排除 start）
+    const order = ["rail", "walk", "ferry", "bus", "taxi", "cable"];
+    const used = {};
+    DAYS.forEach((d) => d.stops.forEach((s) => {
+      const mk = s.arrive && s.arrive.mode;
+      if (mk && mk !== "start") used[mk] = true;
+    }));
     html += "<h4>交通方式（線型）</h4>";
-    ["rail", "walk", "ferry", "bus", "taxi"].forEach((k) => {
+    order.filter((k) => used[k]).forEach((k) => {
       const m = MODES[k];
       const dash = m.dash ? "border-top-style:dashed" : "border-top-style:solid";
       html += '<div class="legend-row"><span class="lg-line" style="border-top-color:#5A6373;' + dash +
@@ -393,21 +495,23 @@
     });
     panel.innerHTML = html;
 
-    $("#legendToggle").addEventListener("click", (e) => {
+    const toggle = $("#legendToggle");
+    toggle.addEventListener("click", (e) => {
       e.stopPropagation();
       panel.classList.toggle("hidden");
     });
     document.addEventListener("click", (e) => {
       if (!panel.classList.contains("hidden") &&
-          !panel.contains(e.target) && e.target.id !== "legendToggle") {
+          !panel.contains(e.target) && !e.target.closest("#legendToggle")) {
         panel.classList.add("hidden");
       }
     });
   }
 
-  /* ---------------- 資訊 Modal ---------------- */
+  /* ---------------- 資訊 Modal（含焦點管理）---------------- */
   function initModal() {
     const mask = $("#infoModal");
+    const modal = mask.querySelector(".modal");
     const body = $("#modalBody");
     body.innerHTML =
       '<div class="m-section"><div class="ms-label">🎯 三大必去</div>' +
@@ -424,17 +528,42 @@
       '<div class="m-foot">本地圖依「方案 A · 經典均衡」整理 · 交通班次／票價請出發前以乘換案內再次確認<br>' +
         '圖片來源：Wikimedia Commons（自由授權）</div>';
 
-    const open = () => mask.classList.remove("hidden");
-    const close = () => mask.classList.add("hidden");
+    let lastFocus = null;
+    const open = () => {
+      lastFocus = document.activeElement;
+      mask.classList.remove("hidden");
+      const close = $("#modalClose");
+      if (close) close.focus();
+    };
+    const close = () => {
+      mask.classList.add("hidden");
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    };
+
     $("#infoBtn").addEventListener("click", open);
     $("#modalClose").addEventListener("click", close);
     mask.addEventListener("click", (e) => { if (e.target === mask) close(); });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+    // 簡易焦點陷阱
+    modal.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const f = modal.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (!mask.classList.contains("hidden")) { close(); return; }
+      const panel = $("#legendPanel");
+      if (panel && !panel.classList.contains("hidden")) panel.classList.add("hidden");
+    });
   }
 
   /* ---------------- 啟動 ---------------- */
   function boot() {
-    // 填入品牌列
     $("#brandTitle").innerHTML =
       esc(META.title) + ' <span class="plan">' + esc(META.subtitle) + "</span>";
     $("#brandDates").textContent = META.dateRange;
@@ -445,16 +574,23 @@
     initSheet();
     initLegend();
     initModal();
-    selectDay(1);
 
-    // 隱藏載入畫面
-    setTimeout(() => { $("#loader").classList.add("hidden"); }, 350);
+    const startDay = dayFromHash();
+    selectDay(startDay == null ? 1 : startDay);
 
-    // 視窗尺寸改變：重算地圖
+    window.addEventListener("hashchange", () => {
+      const h = dayFromHash();
+      if (h != null && h !== currentDay) selectDay(h);
+    });
+
     let rz;
     window.addEventListener("resize", () => {
       clearTimeout(rz);
-      rz = setTimeout(() => { map.invalidateSize(); }, 200);
+      rz = setTimeout(() => {
+        map.invalidateSize();
+        if (!isMobile()) collapseSheet();   // 回到桌機版時清掉抽屜展開殘留
+        if (lastFitPoints) fitTo(lastFitPoints);
+      }, 200);
     });
   }
 
