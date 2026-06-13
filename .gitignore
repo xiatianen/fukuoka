@@ -15,3 +15,7 @@ Thumbs.db
 _*.png
 _*.html
 .chrometmp*
+
+# 舊 pptx 管線用，webmap 純靜態部署不需要（避免 Cloudflare 誤觸 npm build）
+package.json
+package-lock.json
