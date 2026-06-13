@@ -30,8 +30,9 @@
   - ✅ **互動式網頁地圖**：完成 → 多輪審查修正 → 推上 GitHub `xiatianen/fukuoka` → Cloudflare Pages 自動部署。
   - ✅ **簡報 PPTX/PDF**：依「最新行程」重新產生並逐頁驗證（本機 `decks\`）。
   - ✅ 行程已做過兩輪大改（見 §3）：第一輪 Day2 改小倉、加竈門神社+柳川、每天 10:00 出發；**第二輪 Day3／Day4 對調為省力動線、北九州一晚宿小倉、福岡基地改 Hotel Il Palazzo、8/9 砍 teamLab、加 shin shin/若松屋/敘敘苑/天開稻荷、糸島整批不納入**。
-  - ✅ **第三輪交通與費用大強化**：① 地圖路線改畫**真實路徑**（`routes.js`：道路段＋鐵道走廊都走 OSRM 道路幾何，只有纜車短段直線）② 每停點交通細到「**每班車**」（`data.js` 的 `arrive.legs[]`＝路線/車種/時間/車資）＋總車資/班距/省錢替代 ③ **訂票連結**（`arrive.book`／`cost.book`／`day.bookLinks`）④ **各停點估價**（`stop.cost`）⑤ 資訊視窗＋簡報新增**預算概估**（`META.budget`／`plan.budget`）⑥ 簡報新增「交通・訂票・預算」整頁（`deckkit.js` 的 `transportSlide`）。
-  - ✅ **第四輪（最新）住宿定案**：取消北九州宿小倉與 Il Palazzo，**四晚全住「Cross Life 博多天神」（春吉·那珂川南岸、過河即中洲、座標 33.5878,130.4066）、不換房**；**北九州(8/8)改當日來回**（看完皿倉山夜景搭 JR 回福岡）；Day3 早晨改睡到自然醒（不再小倉→博多）；估價同步更新（住宿 4 晚 Cross Life、合計約 ¥80,000–110,000／人）。車資/票價/房價為 2025–2026 並行查證之概估。
+  - ✅ **第三輪交通與費用大強化**：① 地圖路線改畫**真實路徑**（`routes.js`，見下方第五輪最新作法）② 每停點交通細到「**每班車**」（`data.js` 的 `arrive.legs[]`＝路線/車種/時間/車資）＋總車資/班距/省錢替代 ③ **訂票連結**（`arrive.book`／`cost.book`／`day.bookLinks`）④ **各停點估價**（`stop.cost`）⑤ 資訊視窗＋簡報新增**預算概估**（`META.budget`／`plan.budget`）⑥ 簡報新增「交通・訂票・預算」整頁（`deckkit.js` 的 `transportSlide`）。
+  - ✅ **第四輪住宿定案**：取消北九州宿小倉與 Il Palazzo，**四晚全住「Cross Life 博多天神」（春吉·那珂川南岸、過河即中洲、座標 33.5878,130.4066）、不換房**；**北九州(8/8)改當日來回**；Day3 早晨改睡到自然醒；估價同步更新（住宿 4 晚 Cross Life、合計約 ¥80,000–110,000／人）。
+  - ✅ **第五輪（最新）地圖路徑大升級**：① 補齊每天「**飯店↔第一站、最後一站↔飯店**」往返段（`app.js` 的 `homeNode`/`addRouteSeg`/out-back；`data.js` 加 `META.home`＋各天 `fromHome/toHome`；地圖加住宿 🏨 marker）② 路徑來源改為：**步行/計程車/地鐵＝Google Routes API**（`build/gen_routes_google.py`，key 由環境變數 `GOOGLE_API_KEY` 傳入、不入網站/git）；**JR/西鐵鐵道＝OpenStreetMap 真實鐵軌**（`build/gen_routes_rail.py`，因 Google 在日本無 JR/西鐵 transit 資料；用 route=train relation 拼接+裁切：鹿児島本線博多⇄小倉、西鉄大牟田線/太宰府線）；纜車與小倉→八幡短段＝OSRM/直線。`routes.js` 僅 [lat,lng]、無 key。
 
 ---
 
