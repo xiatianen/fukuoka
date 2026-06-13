@@ -163,10 +163,28 @@
     fitTo(pts);
   }
 
+  function clusterIcon(cluster) {
+    const n = cluster.getChildCount();
+    const size = n < 5 ? 34 : (n < 10 ? 40 : 46);
+    return L.divIcon({
+      html: '<div class="ci" style="width:' + size + "px;height:" + size + 'px">' + n + "</div>",
+      className: "cluster-icon",
+      iconSize: [size, size]
+    });
+  }
+
   function drawOverview() {
     const group = L.layerGroup();
+    const cluster = L.markerClusterGroup
+      ? L.markerClusterGroup({
+          maxClusterRadius: 46,
+          showCoverageOnHover: false,
+          spiderfyOnMaxZoom: true,
+          disableClusteringAtZoom: 14,
+          iconCreateFunction: clusterIcon
+        })
+      : L.layerGroup();
     const all = [];
-    const seen = {};   // 同座標微量散開，避免重疊不可點
     DAYS.forEach((day) => {
       for (let i = 1; i < day.stops.length; i++) {
         const a = day.stops[i - 1], b = day.stops[i];
@@ -176,15 +194,7 @@
         }).addTo(group);
       }
       day.stops.forEach((s, i) => {
-        let lat = s.lat, lng = s.lng;
-        const k = lat.toFixed(3) + "," + lng.toFixed(3);
-        const c = seen[k] || 0; seen[k] = c + 1;
-        if (c > 0) {                       // 第 2+ 個重合點，繞圈散開（約 80–120m）
-          const ang = c * 2.39996;
-          lat += 0.0009 * Math.cos(ang);
-          lng += 0.0011 * Math.sin(ang);
-        }
-        const m = L.marker([lat, lng], {
+        const m = L.marker([s.lat, s.lng], {
           icon: L.divIcon({
             className: "day-marker",
             html: '<div class="dm-pin" style="background:' + day.color + '"><span class="dm-num">' +
@@ -195,11 +205,12 @@
         });
         m.bindPopup(popupHtml(s, day, i + 1), { maxWidth: 300, minWidth: 252, autoPanPadding: [28, 28] });
         m.on("click", () => setActiveStop(s.id, { source: "map" }));
-        m.addTo(group);
+        cluster.addLayer(m);
         markerIndex[s.id] = m;
         all.push([s.lat, s.lng]);
       });
     });
+    group.addLayer(cluster);
     group.addTo(map);
     viewLayer = group;
     fitTo(all);
@@ -252,11 +263,12 @@
     const targetZoom = Math.max(map.getZoom(), 14);
     map.flyTo([stop.lat, stop.lng], targetZoom, { duration: 0.6 });
     if (popupTimer) clearTimeout(popupTimer);
-    if (m) popupTimer = setTimeout(() => m.openPopup(), 640); // 不依賴 moveend，必定開啟
+    popupTimer = m ? setTimeout(() => m.openPopup(), 640) : null; // 不依賴 moveend，必定開啟
   }
 
   function setActiveStop(stopId, opts) {
     opts = opts || {};
+    if (popupTimer) { clearTimeout(popupTimer); popupTimer = null; }  // 取消前一個待開 popup
     const stop = findStop(stopId);
     if (!stop) return;
     const m = markerIndex[stopId];
@@ -370,6 +382,16 @@
       const rn = el("div", "return-note", "<b>↩ 歸途 / 收尾</b><br>" + esc(day.returnNote));
       body.appendChild(rn);
     }
+    appendFooter(body);
+  }
+
+  function appendFooter(body) {
+    const f = el("div", "side-foot");
+    f.innerHTML =
+      "福岡 5天4夜 · 方案 A 經典均衡<br>" +
+      "交通班次／票價請出發前以乘換案內再次確認<br>" +
+      "景點照片：Wikimedia Commons（自由授權）";
+    body.appendChild(f);
   }
 
   function renderOverviewBody(body) {
@@ -399,6 +421,7 @@
       wrap.appendChild(card);
     });
     body.appendChild(wrap);
+    appendFooter(body);
   }
 
   /* ---------------- 切換日 ---------------- */
@@ -429,10 +452,12 @@
   function expandSheet() {
     if (!isMobile()) return;
     $("#sidebar").classList.add("expanded");
+    document.body.classList.add("sheet-open");
     setScrim(true);
   }
   function collapseSheet() {
     $("#sidebar").classList.remove("expanded");
+    document.body.classList.remove("sheet-open");
     setScrim(false);
   }
   function toggleSheet() {
