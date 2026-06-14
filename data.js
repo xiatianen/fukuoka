@@ -36,7 +36,7 @@
           photo: "assets/img/airport.jpg",
           desc: "入境、領行李、領網卡。晚班通關人潮多時可能拖過 21:00，完全不抓緊。",
           arrive: { mode: "start", text: "✈️ 台北航班抵達國際線航廈" },
-          cost: { jpy: "¥0", note: "入境、領取預訂的網卡／eSIM（出國前先網購最便宜）" }
+          cost: { jpy: "✈️ 機票 台北⇄福岡 2 人來回 NT$33,048（每人 NT$16,524，已訂）", note: "入境、領取預訂的網卡／eSIM（出國前先網購最便宜）" }
         },
         {
           id: "d1-hotel", key: "nakasu", name: "COCO Gofukumachi",

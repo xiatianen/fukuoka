@@ -686,6 +686,19 @@ html, body {
 .sos-line span { font-size: 13px; font-weight: 700; color: #7a1f1f; }
 .sos-line b { font-family: var(--serif); font-size: 16px; color: #9A2A2A; }
 
+/* ---- 雨備 / 訂位鈕 / 已訂實際價 ---- */
+.rain-tip {
+  margin-top: 7px; padding: 7px 10px; border-radius: 8px; font-size: 11px; line-height: 1.65;
+  color: #1C5C86; background: #E8F2FB; border: 1px solid #C3DEF2;
+}
+.rain-tip b { color: #14507a; }
+.fbtn.fb-rsv { background: #B0436A; color: #fff !important; border-color: #B0436A; }
+.bud-actual {
+  margin-bottom: 12px; padding: 10px 12px; border-radius: 9px; font-size: 12px; line-height: 1.7;
+  color: #235C3A; background: #E9F5EA; border: 1px solid #BFE3C1;
+}
+.bud-actual b { color: #1c7a3f; }
+
 /* ---- 手機調整 ---- */
 @media (max-width: 880px) {
   .fbtn { padding: 8px 13px; font-size: 11.5px; }

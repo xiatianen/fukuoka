@@ -53,6 +53,22 @@
     "d3-yatai":      "週日部分屋台店休"
   };
 
+  // 線上訂位（已查證；電話訂位用 📞 撥號即可、不放這裡）
+  const RESERVE = {
+    "d1-ichiran": { url: "https://www.tablecheck.com/shops/ichiran-souhonten/reserve", label: "一蘭 優先入座（付費免排隊）" },
+    "d3-ichiran": { url: "https://www.tablecheck.com/shops/ichiran-souhonten/reserve", label: "一蘭 優先入座（付費免排隊）" }
+  };
+
+  // 雨備（雨天不適合的戶外行程 → 替代方案）
+  const RAIN = {
+    "d2-sarakura": "雨天／濃霧看不到夜景。改留小倉室內：リバーウォーク北九州、あるあるCity、小倉城天守閣（室內展示）、有頂棚商店街；或提早回博多逛 Canal City。纜車雨天照開但視野差——出發前看天氣再決定上不上山。",
+    "d4-yanagawa": "大雨不適合搭船（小雨時舟有頂棚＋備雨具仍可遊）。改室內：沖端『御花』松濤園・立花家史料館，或直接吃若松屋鰻魚後回程；川下り現場可改期或退票。",
+    "d4-kamado":   "雨天山中石階濕滑。建議跳過竈門神社，改去太宰府『九州国立博物館』（與天滿宮有手扶梯／通道連通、全程室內）避雨賞展。",
+    "d4-dazaifu":  "後山『天開稻荷』石階雨天濕滑、視野差，雨天就跳過；改逛有遮蔭的表參道店家，或轉九州国立博物館（室內）。",
+    "d1-ichiran":  "雨天屋台多半不營業。改吃 24h 一蘭総本店、Canal City 餐廳或博多駅周邊室內美食。",
+    "d3-yatai":    "雨天屋台多休或體驗打折。改 Canal City／博多駅周邊室內晚餐；一蘭演舞照常（店外有屋簷、可撐傘觀賞）。"
+  };
+
   const PHRASES = [
     { jp: "すみません、一人いくらですか？", romaji: "Sumimasen, hitori ikura desu ka?", zh: "不好意思，一個人多少錢？（屋台問價）" },
     { jp: "おすすめは何ですか？これをください。", romaji: "Osusume wa nan desu ka? Kore o kudasai.", zh: "招牌是什麼？請給我這個。" },
@@ -127,7 +143,9 @@
     if (DEADLINE[stop.id]) c.push('<span class="fchip f-dl">⏰ 末班 ' + esc(DEADLINE[stop.id].time) + "</span>");
     if (SUN[stop.id]) c.push('<span class="fchip f-sun">🌇 ' + esc(SUN[stop.id]) + "</span>");
     if (WARN[stop.id]) c.push('<span class="fchip f-warn">⚠️ ' + esc(WARN[stop.id]) + "</span>");
-    return c.length ? '<div class="fchips">' + c.join("") + "</div>" : "";
+    let h = c.length ? '<div class="fchips">' + c.join("") + "</div>" : "";
+    if (RAIN[stop.id]) h += '<div class="rain-tip">🌧️ <b>雨備</b>　' + esc(RAIN[stop.id]) + "</div>";
+    return h;
   };
 
   FIELD.actions = function (stop) {
@@ -137,6 +155,8 @@
     h += '<a class="fbtn fb-nav" href="' + esc(navUrl(stop)) + '" target="_blank" rel="noopener noreferrer">' + navLabel(stop) + "</a>";
     if (j && j.tel) h += '<a class="fbtn fb-call" href="tel:' + esc(j.tel.replace(/[^0-9+]/g, "")) + '">📞 撥號</a>';
     if (j) h += '<button type="button" class="fbtn fb-copy" data-name="' + esc(j.name) + '" data-addr="' + esc(j.addr) + '">📋 日文地址</button>';
+    const rv = RESERVE[stop.id];
+    if (rv) h += '<a class="fbtn fb-rsv" href="' + esc(rv.url) + '" target="_blank" rel="noopener noreferrer">📅 ' + esc(rv.label) + "</a>";
     h += "</div>";
     return h;
   };
@@ -284,6 +304,19 @@
     setTimeout(() => inp.focus(), 60);
   }
 
+  /* ---- 費用一覽（把預算頁搬上網頁，含已訂實際價）---- */
+  function openBudget() {
+    const b = META.budget || { rows: [], total: "", note: "" };
+    const rows = (b.rows || []).map((r) =>
+      '<div class="bud-row"><span>' + esc(r.label) + "</span><b>" + esc(r.val) + "</b></div>").join("");
+    openModal("💰 費用一覽（每人）",
+      '<div class="bud-actual">✅ <b>已訂實際價</b>　✈️ 機票 2 人來回 NT$33,048　🏨 住宿 4 晚 2 人 NT$14,605（≈ ¥69,500）</div>' +
+      '<div class="bud-note">' + esc(b.note) + "</div>" +
+      '<div class="bud-list">' + rows + "</div>" +
+      '<div class="bud-total">' + esc(b.total) + "</div>" +
+      '<div class="m-foot">機票與住宿為已訂實際價；交通／餐食／門票為旺季概估，現場以實際為準。各景點/餐飲的單項估價請點地圖停點查看。</div>');
+  }
+
   /* =====================================================================
    *  F7 持ち物 + 已訂清單（localStorage）
    * ===================================================================== */
@@ -382,6 +415,7 @@
    *  工具列（FAB）
    * ===================================================================== */
   const TOOLS = [
+    { k: "budget", ic: "💰", label: "費用一覽", fn: openBudget },
     { k: "geo", ic: "📍", label: "我的位置", fn: toggleGeo },
     { k: "list", ic: "✓", label: "持ち物清單", fn: openChecklist },
     { k: "phrase", ic: "💬", label: "日語句", fn: openPhrases },
