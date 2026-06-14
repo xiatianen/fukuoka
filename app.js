@@ -195,11 +195,13 @@
             '">● Day ' + day.n + " · " + esc(day.date) + "</span>" +
         "</div>" +
         '<div class="pp-name">' + ti + " " + esc(stop.name) + "</div>" +
+        (window.FIELD ? FIELD.chips(stop) : "") +
         '<div class="pp-desc">' + esc(stop.desc) + "</div>" +
         '<div class="pp-trans"><span class="t-ic">' + mode.icon + "</span>" +
           "<span>" + esc(stop.arrive.text) + "</span></div>" +
         transHtml(stop.arrive) +
         costHtml(stop) +
+        (window.FIELD ? FIELD.actions(stop) : "") +
       "</div></div>"
     );
   }
@@ -375,6 +377,7 @@
           esc(a.name) + " → " + esc(b.name) + "</div>" +
         '<div class="rp-text">' + esc(b.arrive.text) + "</div>" +
         transHtml(b.arrive) +
+        (window.FIELD ? FIELD.actions(b) : "") +
         '<div class="rp-day" style="color:' + (day.colorText || day.color) +
           '">● Day ' + day.n + " · " + esc(day.theme) + "</div>" +
       "</div>"
@@ -519,8 +522,10 @@
             '<span class="sc-type">' + ti + "</span>" +
             '<span class="sc-name">' + esc(s.name) + "</span>" +
           "</div>" +
+          (window.FIELD ? FIELD.chips(s) : "") +
           '<div class="sc-desc">' + esc(s.desc) + "</div>" +
           costHtml(s) +
+          (window.FIELD ? FIELD.actions(s) : "") +
           (s.photo
             ? '<div class="sc-photo"><img src="' + s.photo + '" alt="' + esc(s.name) +
               ' 照片" loading="lazy" onerror="this.parentNode.style.display=\'none\'"></div>'
@@ -543,6 +548,7 @@
       body.appendChild(bl);
     }
     appendFooter(body);
+    if (window.FIELD && FIELD.onRender) FIELD.onRender(currentDay);
   }
 
   function appendFooter(body) {
@@ -582,6 +588,7 @@
     });
     body.appendChild(wrap);
     appendFooter(body);
+    if (window.FIELD && FIELD.onRender) FIELD.onRender(0);
   }
 
   /* ---------------- 切換日 ---------------- */
@@ -779,6 +786,18 @@
       }, 200);
     });
   }
+
+  // 對外 API：供 field.js（現場工具層）取用地圖/行程/切換
+  window.TRIP_APP = {
+    DAYS: DAYS, META: META,
+    getMap: function () { return map; },
+    getCurrentDay: function () { return currentDay; },
+    selectDay: function (n) { selectDay(n); },
+    setActiveStop: function (id, o) { setActiveStop(id, o); },
+    findStop: function (id) { return findStop(id); },
+    focusStop: function (s, m) { focusStop(s, m); },
+    markerFor: function (id) { return markerIndex[id]; }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
