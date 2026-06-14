@@ -52,7 +52,7 @@
             alt: "省錢：免費連絡巴士→地下鐵空港線（福岡空港→中洲川端）再轉箱崎線 1 站到呉服町，約 ¥260（每人）＋步行 3 分。國際線無地鐵、需先接駁到國內線。",
             book: { label: "福岡市地下鐵 路線・運賃案內", url: "https://subway.city.fukuoka.lg.jp/" }
           },
-          cost: { jpy: "約 ¥12,000–20,000／晚（2 人 1 室·旺季）× 4 晚", note: "COCO Gofukumachi（公寓式·無早餐）；淡季約 ¥8,000 起、8/7–8/8 暑假週末偏高，建議早訂比價（無官網，Booking／Agoda／楽天均可訂）", book: { label: "COCO Gofukumachi 訂房（Booking.com）", url: "https://www.booking.com/hotel/jp/coco-gofukumachi-fukuoka1.html" } }
+          cost: { jpy: "實際 NT$14,605／2 人 4 晚（≈ ¥69,500、約 ¥17,400／晚）", note: "COCO Gofukumachi（公寓式·無早餐）已訂房總額；機票另計 2 人來回 NT$33,048", book: { label: "COCO Gofukumachi 訂房（Booking.com）", url: "https://www.booking.com/hotel/jp/coco-gofukumachi-fukuoka1.html" } }
         },
         {
           id: "d1-ichiran", key: "ichiran", name: "中洲覓食（一蘭總本店 / 屋台）",
@@ -326,14 +326,15 @@
     ],
     // 每人概估（2 人同行均攤、不含台北↔福岡機票；旺季實際可能上浮）
     budget: {
-      note: "每人概估 · 2 人同行均攤、不含機票；暑假旺季實際可能上浮",
+      note: "每人 · 2 人同行均攤。機票（2 人 NT$33,048）與住宿（4 晚 2 人 NT$14,605 ≈ ¥69,500）為實際購入價；交通／餐食／門票為旺季概估。",
       rows: [
+        { label: "機票（台北⇄福岡來回）", val: "NT$16,524／人" },
+        { label: "住宿（4 晚 COCO·2 人均攤）", val: "NT$7,303／人" },
         { label: "交通（5 天）", val: "約 ¥9,000–12,000" },
-        { label: "餐食（含若松屋鰻魚、敘敘苑燒肉等）", val: "約 ¥18,000–30,000" },
-        { label: "住宿（4 晚 COCO Gofukumachi · 2 人 1 室均攤）", val: "約 ¥24,000–40,000" },
-        { label: "門票／體驗（皿倉山纜車 ¥1,230、柳川川下り ¥2,000、お守り等）", val: "約 ¥3,000–5,000" }
+        { label: "餐食（鰻魚·燒肉等）", val: "約 ¥18,000–30,000" },
+        { label: "門票／體驗", val: "約 ¥3,000–5,000" }
       ],
-      total: "合計約 ¥54,000–87,000／人（≈ NT$11,500–18,500，不含機票）"
+      total: "合計約 NT$30,000–34,000／人（含機票＋住宿實際；其餘旺季概估）"
     }
   };
 
