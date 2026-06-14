@@ -1,26 +1,23 @@
-你好，你要接手一個**進行中、且已大致完成**的專案。請先讀完這段、照最後的指示做。
+你好，你要接手一個**進行中、且已大致完成**的專案。請先讀完這段、照最後指示做。
 
 ## 專案一句話
-這是「福岡 8/7–8/11 五天四夜」旅遊規劃案（使用者選定 **方案 A** 並多次客製）。目前有**兩個已完成並部署/更新的產出**：
-1. **互動式網頁地圖**（手機+電腦友善、逐日路線+所有交通方式）— 已推上 GitHub `xiatianen/fukuoka` → Cloudflare Pages 自動部署。
-2. **簡報 PPTX/PDF**（方案 A）— 已依最新行程重新產生（本機 `decks\`）。
+這是「福岡 8/7–8/11 五天四夜」旅遊規劃案（使用者選定 **方案 A** 並多次客製）。有**兩個已完成並部署/更新的產出**：① **互動式網頁地圖**（逐日路線＋每段交通＋訂票＋估價＋真實鐵軌路徑）— 已推上 GitHub `xiatianen/fukuoka` → Cloudflare Pages 自動部署；② **簡報 PPTX/PDF（13 頁）** — 本機 `C:\fukuoka\decks\`。
 
-工作大多是**繼續微調行程、網站或簡報**，兩邊資料要同步。
+## 你接下來唯一的任務：換飯店
+使用者**正要把飯店換掉**（目前是「Cross Life 博多天神」，春吉、座標 33.5878,130.4066，四晚都住、不換房）。他讀完你的回報後，會給你**新飯店的名稱與位置**。
 
 ## 你的第一步（務必照做）
-1. 工作目錄 `C:\fukuoka`。先**完整讀** `C:\fukuoka\HANDOFF.md`（自足，涵蓋最終行程、檔案、網站資料模型、簡報建置、部署、環境地雷、已做的審查、下一步候選）。
-2. 接著讀 `C:\fukuoka\data.js`（網站行程資料，權威）與 `C:\fukuoka\data\planA.json`（簡報資料，已與 data.js 同步）。
-3. 瞄一眼 `C:\fukuoka\assets\img\` 的景點照片。
+1. 工作目錄 `C:\fukuoka`。**完整讀** `C:\fukuoka\HANDOFF.md`（自足文件）。**特別精讀開頭的「§A. 如何換飯店」**——那是一份精確清單，列出換飯店要動的每個檔案與步驟。
+2. 接著掃一眼 `C:\fukuoka\data.js`（網站行程／飯店資料，權威）、`C:\fukuoka\data\planA.json`（簡報源）、`C:\fukuoka\routes.js`（地圖真實路徑幾何）。
 
-## 重點提醒
-- **改行程**：網站幾乎只動 `data.js` 的 `DAYS`；簡報動 `data\planA.json`（景點中文名靠 `assets\credits.json`）。**兩邊要一起改、保持同步**。
-- **網站部署**：`git push origin main` → Cloudflare 自動部署。repo 是**純靜態**（無 package.json、無建置步驟）。
-- **網站驗證**：本機有 Chrome，可用 `--headless --screenshot` 截圖核對（HANDOFF §9 有指令）；改完務必截圖驗證再 push。
-- **簡報重生**：`PYTHONIOENCODING=utf-8 python build/make_all.py A` 後轉 PDF（HANDOFF §6）。⚠️ 若使用者用 **Adobe Acrobat** 開著舊 PDF 會鎖檔無法覆寫，需先關掉該程序。
-- **最新行程（第二輪省力動線版）**：Day1 抵達→Day2＝小倉+皿倉山夜景**＋宿小倉**→Day3＝**福岡室內悠閒日**（天神購物+shin shin+Canal City+一蘭演舞+中洲屋台，**不排 teamLab**）→Day4＝**太宰府+星巴克+竈門+柳川若松屋鰻魚+敘敘苑燒肉（輕裝）**→Day5 回程。住宿：福岡三晚 Hotel Il Palazzo＋8/8 宿小倉。每天約 10:00 出發（Day1 抵達、Day5 趕機例外）。詳見 HANDOFF §3。
-- **線上網址**在使用者的 Cloudflare 儀表板；`fukuoka.pages.dev` 是別人的同名專案、不是這個。
+## 換飯店的重點（細節全在 HANDOFF §A，先有概念即可）
+- 要動 **4 個地方**：`data.js`（網站，含 `META.home` 等 **3 處座標**＋飯店文案＋估價）、`routes.js`（**必須重生**，因飯店座標烤進 10 段路徑）、`data/planA.json`（簡報源）、`build/deckkit.js`（簡報住宿/結尾頁），再**重生簡報 PPTX/PDF**。
+- **routes.js 重生**：改 `build/gen_routes_google.py` 與 `build/gen_routes_rail.py` 的 `H=[lat,lng]` 為新座標 → 跑 `gen_routes_google.py`（需 **Google API key**，使用者會給你一把可用的試用 key，用環境變數 `GOOGLE_API_KEY` 傳入、**不要寫進檔案或 commit**）→ 跑 `gen_routes_rail.py`（OSM 真實鐵軌、免 key）。
+- 改完**務必用無頭 Chrome 截圖 `#d1–#d4` 驗證**飯店往返線正常（HANDOFF §10），再 `git add data.js routes.js data/planA.json` → push（CF 自動部署）；簡報是本機產物、可用 SendUserFile 傳給使用者。
+- 若**新飯店不在中洲旁**（例如博多站/天神中心/藥院…），記得重評那些「步行」段是否要改地鐵/計程車（影響 `arrive.legs`/分鐘/mode）。
+- 換飯店時順手查**新飯店 8 月旺季 2 人 1 室房價＋官方訂房 URL＋到中洲/天神/博多/屋台的步行或地鐵時間**（估價與文案要用）。
 
 ## 然後——待命
-讀完後，用 **3–5 句話**回報你已掌握的內容（兩個產出的現況 + 最新行程骨架 + 你知道改網站/改簡報各要動哪些檔），並列出 **1–2 個**你預期需要使用者拍板的決策點（例如：是否要做 Day3 保險時間表、是否要 GPX/列印版、行程還要不要再微調）。
+讀完後，用 **3–5 句話**回報：① 兩個產出的現況、② 你已掌握換飯店要動哪些檔（data.js／routes.js／planA.json／deckkit.js＋重生簡報）、③ 你需要使用者提供什麼（**新飯店名稱＋精確 lat/lng**，以及那把 **Google API key**）。
 
-**然後停下來等使用者指示，先不要改任何檔案。** 使用者會說接下來要做什麼。
+**然後停下來等使用者給新飯店的位置，先不要改任何檔案。**
