@@ -249,7 +249,7 @@
     m.bindPopup(
       '<div class="route-pp"><div class="rp-head"><span class="rp-ic">🏨</span>' +
         esc(home.name) + "（住宿·四晚）</div>" +
-        '<div class="rp-text">春吉·那珂川南岸；過河即中洲，步行到中洲屋台 4–5 分、一蘭 5–6 分、天神 7–10 分。四晚不換房。</div></div>',
+        '<div class="rp-text">博多区上呉服町·呉服町站旁（地下鐵箱崎線，步行 3 分）。步行到 Canal City 約 11 分、中洲／一蘭約 12 分；博多·天神搭地鐵 2 站。公寓式、四晚不換房。</div></div>',
       { maxWidth: 262 });
     m.addTo(group);
     return m;
