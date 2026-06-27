@@ -10,7 +10,7 @@
   const TYPE_ICON = {
     airport: "✈️", hotel: "🏨", food: "🍜", station: "🚉", sight: "⛩️",
     aquarium: "🐟", night: "🌃", cafe: "☕", museum: "🖼️", nature: "🌳",
-    shop: "🛍️", show: "🎏"
+    shop: "🛍️", show: "🎏", salon: "✂️"
   };
 
   const isMobile = () => window.matchMedia("(max-width: 880px)").matches;

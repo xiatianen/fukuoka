@@ -1,6 +1,6 @@
 /* 福岡行程地圖 — Service Worker（離線可用）
  * app shell：cache-first；地圖磚：cache-first＋runtime 快取；可由前端訊息預存整趟範圍。 */
-const VERSION = "fukuoka-v2";
+const VERSION = "fukuoka-v3";
 const SHELL = VERSION + "-shell";
 const TILES = VERSION + "-tiles";
 

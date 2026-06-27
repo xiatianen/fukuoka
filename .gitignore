@@ -19,3 +19,8 @@ _*.html
 # 舊 pptx 管線用，webmap 純靜態部署不需要（避免 Cloudflare 誤觸 npm build）
 package.json
 package-lock.json
+
+# 金鑰：路徑生成用的 Google API key（只在本機 env 用，絕不部署/commit）
+.env
+.env.*
+*.env

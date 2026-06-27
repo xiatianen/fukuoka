@@ -34,27 +34,33 @@
     "d3-yatai":     { name: "中洲屋台街（清流公園）", addr: "福岡県福岡市博多区中洲1丁目8 清流公園" },
     "d2-kokura":    { name: "旦過市場", addr: "福岡県北九州市小倉北区魚町4-2-18" },
     "d2-sarakura":  { name: "皿倉山ケーブルカー 山麓駅", addr: "福岡県北九州市八幡東区大字尾倉1481-1" },
+    "d3-haircut":   { name: "OFF.HAIRSHOP（オフヘアショップ）", addr: "福岡県福岡市博多区博多駅前4-10-1 エサキビル4F", tel: "092-482-2550" },
     "d3-tenjin":    { name: "博多らーめん Shin-Shin 天神本店", addr: "福岡県福岡市中央区天神3-2-19 久保田ビル1F", tel: "092-732-4006" },
     "d3-canal":     { name: "キャナルシティ博多", addr: "福岡県福岡市博多区住吉1-2" },
     "d4-sbux":      { name: "スターバックス 太宰府天満宮表参道店", addr: "福岡県太宰府市宰府3-2-43" },
     "d4-dazaifu":   { name: "太宰府天満宮", addr: "福岡県太宰府市宰府4-7-1", tel: "092-922-8225" },
     "d4-kamado":    { name: "宝満宮 竈門神社", addr: "福岡県太宰府市内山883", tel: "092-922-4106" },
-    "d4-yanagawa":  { name: "うなぎ 若松屋", addr: "福岡県柳川市沖端町26", tel: "0944-72-3163" },
+    "d4-miyajidake":{ name: "宮地嶽神社", addr: "福岡県福津市宮司元町7-1", tel: "0940-52-0016" },
     "d1-airport":   { name: "福岡空港 国際線ターミナル", addr: "福岡県福岡市博多区大字青木739" },
     "d5-airport":   { name: "福岡空港 国際線ターミナル", addr: "福岡県福岡市博多区大字青木739" }
   };
-  const CASH = new Set(["d1-ichiran", "d3-yatai", "d2-kokura", "d2-brasileiro", "d4-yanagawa"]);
-  const DEADLINE = { "d2-sarakura": { label: "末班", time: "22:15", note: "上り纜車末班 21:20、八幡駅接駁巴士末班 22:15——看完夜景別逗留太久" } };
-  const SUN = { "d2-sarakura": "日落 19:12" };
+  const CASH = new Set(["d1-ichiran", "d3-yatai", "d2-kokura", "d2-brasileiro", "d4-miyajidake"]);
+  const DEADLINE = {
+    "d2-sarakura":   { label: "末班", time: "22:15", note: "上り纜車末班 21:20、八幡駅接駁巴士末班 22:15——看完夜景別逗留太久" },
+    "d4-miyajidake": { label: "末班巴士", time: "22:06", note: "宮地嶽神社前→福間駅 回程巴士班次疏，風鈴期平日末班約 21:22／22:06（出發前再確認）；逾時改計程車到福間駅約 6 分。JR 福間→博多末班很晚（過 23:30）。" }
+  };
+  const SUN = { "d2-sarakura": "日落 19:12", "d4-miyajidake": "日落 19:11" };
   const WARN = {
+    "d3-haircut":    "OFF.HAIRSHOP 週一休（8/9 週日 10:00–19:00 營業）；10:00 開店要先預約",
     "d2-brasileiro": "週日・假日休（已排在週六）",
     "d3-tenjin":     "shin shin 週三休（8/9 週日營業）",
-    "d4-yanagawa":   "若松屋 週三＆每月第1·3週二休、賣完即止",
+    "d4-miyajidake": "夜間點燈 20:00–22:00（天候不佳中止）；8/10 週一無夜市攤、松ヶ枝餅只有白天",
     "d3-yatai":      "週日部分屋台店休"
   };
 
   // 線上訂位（已查證；電話訂位用 📞 撥號即可、不放這裡）
   const RESERVE = {
+    "d3-haircut": { url: "https://beauty.hotpepper.jp/slnH000391875/", label: "OFF.HAIRSHOP 線上予約（HotPepper）" },
     "d1-ichiran": { url: "https://www.tablecheck.com/shops/ichiran-souhonten/reserve", label: "一蘭 優先入座（付費免排隊）" },
     "d3-ichiran": { url: "https://www.tablecheck.com/shops/ichiran-souhonten/reserve", label: "一蘭 優先入座（付費免排隊）" }
   };
@@ -62,7 +68,7 @@
   // 雨備（雨天不適合的戶外行程 → 替代方案）
   const RAIN = {
     "d2-sarakura": "雨天／濃霧看不到夜景。改留小倉室內：リバーウォーク北九州、あるあるCity、小倉城天守閣（室內展示）、有頂棚商店街；或提早回博多逛 Canal City。纜車雨天照開但視野差——出發前看天氣再決定上不上山。",
-    "d4-yanagawa": "大雨不適合搭船（小雨時舟有頂棚＋備雨具仍可遊）。改室內：沖端『御花』松濤園・立花家史料館，或直接吃若松屋鰻魚後回程；川下り現場可改期或退票。",
+    "d4-miyajidake": "雨天／濃霧點燈可能中止、夕陽也看不到。改：縮短為白天參拜（風鈴白天一樣美），或留博多室內、改天再訪；出發前看天氣＋官方公告再決定上不上山。",
     "d4-kamado":   "雨天山中石階濕滑。建議跳過竈門神社，改去太宰府『九州国立博物館』（與天滿宮有手扶梯／通道連通、全程室內）避雨賞展。",
     "d4-dazaifu":  "後山『天開稻荷』石階雨天濕滑、視野差，雨天就跳過；改逛有遮蔭的表參道店家，或轉九州国立博物館（室內）。",
     "d1-ichiran":  "雨天屋台多半不營業。改吃 24h 一蘭総本店、Canal City 餐廳或博多駅周邊室內美食。",
@@ -89,12 +95,12 @@
   const PACKING = ["護照 + 入境資料", "機票 / eSIM·網卡", "現金（屋台·市場收現金）", "信用卡 / IC 卡（Suica 等）",
     "雨具 / 陽傘（8 月午後雷陣雨）", "行動電源 + 充電器", "常備藥 / 防曬", "折疊購物袋（伴手禮）"];
   const BOOKINGS = [
+    "OFF.HAIRSHOP 剪髮：8/9(日)10:00 HotPepper 線上／電話予約",
+    "叙々苑 天神：8/9(日)晚 線上/電話予約（人氣店務必先訂）",
     "一蘭演舞：出發前 1–2 週向官方確認當週演出",
     "新幹線 smartEX 預約（博多⇄小倉）",
-    "太宰府・柳川観光きっぷ",
-    "若松屋 鰻魚（平日可先洽詢、賣完即止）",
-    "叙々苑 天神 線上/電話予約",
-    "柳川川下り 予約",
+    "宮地嶽神社 風鈴：確認 8/10 點燈與福間回程巴士末班",
+    "太宰府散策きっぷ／西鐵單程＋JR 博多⇄福間",
     "COCO Gofukumachi 訂房（四晚）"
   ];
   const EMERGENCY = {
