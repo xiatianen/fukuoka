@@ -36,6 +36,7 @@
     "d2-sarakura":  { name: "皿倉山ケーブルカー 山麓駅", addr: "福岡県北九州市八幡東区大字尾倉1481-1" },
     "d3-haircut":   { name: "OFF.HAIRSHOP（オフヘアショップ）", addr: "福岡県福岡市博多区博多駅前4-10-1 エサキビル4F", tel: "092-482-2550" },
     "d3-tenjin":    { name: "博多らーめん Shin-Shin 天神本店", addr: "福岡県福岡市中央区天神3-2-19 久保田ビル1F", tel: "092-732-4006" },
+    "d3-jojoen":    { name: "叙々苑 天神岩田屋本店新館7F", addr: "福岡県福岡市中央区天神2-5-35 岩田屋本店新館7F", tel: "092-737-5989" },
     "d3-canal":     { name: "キャナルシティ博多", addr: "福岡県福岡市博多区住吉1-2" },
     "d4-sbux":      { name: "スターバックス 太宰府天満宮表参道店", addr: "福岡県太宰府市宰府3-2-43" },
     "d4-dazaifu":   { name: "太宰府天満宮", addr: "福岡県太宰府市宰府4-7-1", tel: "092-922-8225" },
@@ -61,6 +62,7 @@
   // 線上訂位（已查證；電話訂位用 📞 撥號即可、不放這裡）
   const RESERVE = {
     "d3-haircut": { url: "https://beauty.hotpepper.jp/slnH000391875/", label: "OFF.HAIRSHOP 線上予約（HotPepper）" },
+    "d3-jojoen":  { url: "https://booking.resty.jp/webrsv/search/s014005101/28004", label: "叙々苑 天神 線上予約" },
     "d1-ichiran": { url: "https://www.tablecheck.com/shops/ichiran-souhonten/reserve", label: "一蘭 優先入座（付費免排隊）" },
     "d3-ichiran": { url: "https://www.tablecheck.com/shops/ichiran-souhonten/reserve", label: "一蘭 優先入座（付費免排隊）" }
   };
