@@ -89,8 +89,9 @@ PYTHONIOENCODING=utf-8 python -c "import sys,shutil,tempfile;sys.path.insert(0,'
   3. 交通細到「每班車」(`arrive.legs`)＋訂票連結＋各停點估價＋預算頁＋簡報「交通・訂票・預算」整頁。
   4. **住宿定案：四晚同一飯店、不換房；北九州(8/8) 當日來回。** 飯店歷經 Cross Life 博多天神 → **COCO Gofukumachi（博多上呉服町、現任）**。
   5. **地圖路徑升級**：補齊「飯店↔各站」往返＋🏨 marker；路徑改 **Google Routes（步行/計程車/地鐵）＋ OSM 真實鐵軌（JR/西鐵）**。
-  6. **（本 session）**①換飯店 COCO；②加 **Cafe Brasileiro** 為 8/8 午餐（飯店旁老咖啡館、補回想吃的「布丁」）；③**機票/房費填實際購入價**（機票 2人 NT$33,048、住宿 4晚2人 NT$14,605）；④**整個 `field.js` 現場工具層**（8 大功能，見 §5.5）＋**PWA 離線**（sw.js/manifest/icons）；⑤餐廳**線上訂位連結**（一蘭優先入座、敘敘苑）＋**雨天雨備**＋網頁全面「講費用」。
-- **狀態**：網站＋簡報皆完成、驗證、已推 GitHub `xiatianen/fukuoka`（Cloudflare Pages 自動部署）。`git status` 乾淨，最新 commit `a56077e`。
+  6. **（前一 session）**①換飯店 COCO；②加 **Cafe Brasileiro** 為 8/8 午餐（飯店旁老咖啡館、補回想吃的「布丁」）；③**機票/房費填實際購入價**（機票 2人 NT$33,048、住宿 4晚2人 NT$14,605）；④**整個 `field.js` 現場工具層**（8 大功能，見 §5.5）＋**PWA 離線**（sw.js/manifest/icons）；⑤餐廳**線上訂位連結**（一蘭優先入座、敘敘苑）＋**雨天雨備**＋網頁全面「講費用」。
+  7. **（本輪）**①8/9（日）加 **博多剪髮 OFF.HAIRSHOP**（10:00、博多駅前4-10-1 エサキビル4F、週一休/週日10:00開、¥5,500、座標 33.5866,130.4183）為 Day3 首站；②8/10（一）**柳川 → 宮地嶽神社「風凛（風鈴）まつり」**（福津、奧之宮約5,000風鈴、日落19:11、夜間點燈 20:00–22:00、座標 33.7798,130.4852；JR博多→福間¥560＋西鐵巴士1-1 ¥210）；③**敘敘苑燒肉移到 8/9（日）天神**（早一點晚餐、原 Day4 取消）；④`data.js`/`field.js`/`routes.js`（新增 `d3-haircut`/`d3-tenjin`/`d4-miyajidake`、已重生）/`planA.json`/簡報全層同步；⑤`app.js` 加 `salon ✂️` 類型、`sw.js` v2→v3。**查證重點**：8/10 是平日（山之日是 8/11）→ 用平日巴士；『光の道』只 2・10 月、8 月無，8 月主秀是夜間風鈴點燈；松ヶ枝餅/夜市攤週一沒有。
+- **狀態**：網站＋簡報皆完成、驗證、已推 GitHub `xiatianen/fukuoka`（Cloudflare Pages 自動部署）。`git status` 乾淨，本輪行程更新 commit `e1ac932`（之後若再 push 以 `git log` 為準）。
 
 ---
 
@@ -153,7 +154,7 @@ build\                建置腳本（git 不追蹤）：
 - `DAYS[]`：`{n,date,dow,theme,color,colorText,summary,returnNote?,fromHome?,toHome?,bookLinks?,stops:[{id,key,name,type,time,lat,lng,desc,photo?,arrive:{mode,text,legs?,fare?,freq?,alt?,book?},cost?:{jpy,note?,book?}}]}`。
   - `fromHome`/`toHome`：是否畫「飯店→首站」「末站→飯店」。Day1 只 toHome；Day2–4 皆 true；Day5 不設（飯店即 stop）。
   - **停點 id 是全域唯一鍵**，同時被 routes.js（路徑）與 **field.js（§5.5 的對應表）** 引用。**增刪/改名停點時，兩邊都要顧。**
-  - 目前各 Day 的停點 id：D1 `d1-airport/d1-hotel/d1-ichiran`；D2 `d2-brasileiro/d2-kokura/d2-sarakura`；D3 `d3-tenjin/d3-canal/d3-ichiran/d3-yatai`；D4 `d4-sbux/d4-dazaifu/d4-kamado/d4-yanagawa`；D5 `d5-hotel/d5-airport`。
+  - 目前各 Day 的停點 id：D1 `d1-airport/d1-hotel/d1-ichiran`；D2 `d2-brasileiro/d2-kokura/d2-sarakura`；D3 `d3-haircut/d3-tenjin/d3-canal/d3-ichiran/d3-yatai`；D4 `d4-sbux/d4-dazaifu/d4-kamado/d4-miyajidake`；D5 `d5-hotel/d5-airport`。（本輪：D3 新增 `d3-haircut`；D4 `d4-yanagawa`→`d4-miyajidake`。）
 - **改行程**：99% 動 `DAYS`。新景點圖放 `assets/img/<key>.jpg`。動到座標/順序/飯店 → 重生 routes.js（§7）。動到 id/增刪停點 → 同步 field.js（§5.5）。
 
 ---
@@ -204,7 +205,8 @@ build\                建置腳本（git 不追蹤）：
 2. **`gen_routes_rail.py`**（OSM Overpass，免 key）：覆蓋 **JR/西鐵鐵道段**（Google 在日本無此資料）。抓 `route=train` relation → 串接折線 → 依車站座標裁切。
    - relation：鹿児島本線 `11533962`（博多⇄小倉⇄八幡）、西鉄天神大牟田線 `11485954`、西鉄太宰府線 `11827541`。
    - **串接法（`METHOD`）**：kagoshima 用 **member 順序**（幾何拼接會在折尾分歧斷鏈）；nishitetsu/dazaifu 用 **幾何端點拼接**（member 排序不連續）。改線若幾何怪就換另一種試。
-   - **rail 覆蓋的 6 段**：`d2-kokura`（Brasileiro→博多→小倉）、`d2-sarakura`（小倉→八幡→皿倉）、`d2-back`（皿倉→博多→飯店）、`d4-out`（飯店→天神→二日市→太宰府）、`d4-yanagawa`（竈門→二日市→柳川）、`d4-back`（柳川→天神→飯店）。
+   - **rail 覆蓋的 6 段**：`d2-kokura`（Brasileiro→博多→小倉）、`d2-sarakura`（小倉→八幡→皿倉）、`d2-back`（皿倉→博多→飯店）、`d4-out`（飯店→天神→二日市→太宰府）、`d4-miyajidake`（竈門→太宰府→二日市→天神→[地鐵直線]→博多→[JR鹿児島本線]→福間→[巴士直線]→宮地嶽）、`d4-back`（宮地嶽→福間→博多→飯店）。**注意**：`gen_routes_rail.py` 的 `S["fukuma"]=[33.7636,130.4875]`＋常數 `MIYAJIDAKE=[33.7798,130.4852]`；博多→福間用 kagoshima relation（11533962，福間在博多⇄門司港之間）。
+   - **本輪 Day3**：`d3-out`（飯店→博多剪髮）與新段 `d3-tenjin`（博多剪髮→天神）皆為地鐵/步行，走 Google／OSRM、**不在** rail 6 段內。
    - **Day2 的特殊結構**（本 session 因加 Brasileiro 改的）：`d2-out` 現在是 **Google WALK 飯店→Brasileiro**（短）；`d2-kokura` 才是 **Brasileiro→小倉 真實鐵軌**。連接短段（飯店↔站、纜車山麓↔山頂）＝直線短接。
 - 換飯店：兩支 `H` 都改、重跑（Overpass 偶 429/504，已內建重試/退避）。`BRASILEIRO` 常數是餐廳、不要動。
 
@@ -233,7 +235,8 @@ CHROME="/c/Program Files/Google/Chrome/Application/chrome.exe"
 - `_*.png`/`_*.html`/`.chrometmp*` 都被 gitignore，驗完可刪。**動座標/飯店後務必截 #d1–#d4 看往返線正常。**
 
 ## 11. 環境地雷
-- Windows 11；Bash＋PowerShell 皆可。Node v22、**Python 3.14**（有 Pillow/PyMuPDF）、LibreOffice(`soffice`)、Chrome、`gh`。
+- Windows 11；Bash＋PowerShell 皆可。Node v22、**Python 3.14**（有 Pillow/PyMuPDF）、Chrome、`gh`。
+- ⚠️ **LibreOffice 已不在本機**（`C:\Program Files\LibreOffice\program\` 約 6/23 後被清空、只剩 `logs/`）→ `render.py`／`make_all.py` 的 PDF/預覽步驟會 `WinError 2`（make_all 仍會印出 PPTX，因 `build.js` 走 node/pptxgenjs、**不需** LibreOffice）。**PPTX→PDF 改用 PowerPoint COM**（Office16 已裝、已驗證）：PowerShell `New-Object -ComObject PowerPoint.Application` → `Presentations.Open(pptx,-1,0,0)` → `SaveAs(pdf,32)` → `Quit()`（先 `Stop-Process POWERPNT,Acrobat`）。或重裝 LibreOffice 還原 `render.py` 的 `SOFFICE` 路徑。
 - **`PYTHONIOENCODING=utf-8`** 跑 Python 印中日文必設（否則 cp950 報錯）。
 - 轉 PDF 前 `taskkill //F //IM soffice.bin/soffice.exe`；用 `render.to_pdf`（per-file 暫存 profile）才穩。**Acrobat 開著舊 PDF 會鎖檔**→ `taskkill //F //IM Acrobat.exe`（使用者已授權直接關）。
 - Overpass 偶 429/504（已重試）。Google Routes 日本無 JR/西鐵 transit（故鐵道走 OSM）。Google **Geocoding API** 那把試用 key 沒開（REQUEST_DENIED）；要地理編碼用 **GSI**（`https://msearch.gsi.go.jp/address-search/AddressSearch?q=...`，日本門牌最準）或 Nominatim。
